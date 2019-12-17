@@ -1,12 +1,12 @@
 .fixed-plugin{
     position: fixed;
-    right: 0;
+    left: 0;
     width: 64px;
     background: rgba(0,0,0,.3);
     z-index: 1031;
     border-radius: 8px 0 0 8px;
     text-align: center;
-    top: 130px;
+    bottom: 20px;
 
     li > a,
     .badge{
@@ -23,16 +23,17 @@
     }
 
     .dropdown-menu{
-        right: 80px;
-        left: auto !important;
-        top: -52px !important;
+        left: 120px;
+        right: auto !important;
+        top: -90px !important;
         width: 290px;
+        margin-left:80px;
         border-radius: 0.1875rem;
         padding: 0 10px;
         background: linear-gradient($black, $black-states);
     }
 
-    .dropdown .dropdown-menu .tim-icons{
+    .dropdown  .tim-icons{
       top: 5px;
     }
 
