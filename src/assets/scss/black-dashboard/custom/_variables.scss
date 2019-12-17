@@ -115,8 +115,16 @@ $warning-states:       #ff6491 !default;
 $danger-states:        #ec250d !default;
 $black-states:         #1d253b !default;
 
+
+
 $background-black:           #1e1e2f !default;
 $background-states-black:    #1e1e24 !default;
+
+// sidebar
+$sidebar-light: rgba(200,120,50, 1.0)  !default;
+$sidebar-dark: rgba(42,72,88, .6)  !default;
+$bg-dark: rgba(49,51,53, .6)  !default;
+$bg-darker: rgba(43,43,43,.6)  !default;
 
 // opacity
 $default-opacity:      rgba(182, 182, 182, .6) !default;
