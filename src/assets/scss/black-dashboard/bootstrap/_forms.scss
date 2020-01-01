@@ -277,7 +277,7 @@ textarea.form-control {
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 0;
+      margin-top: 0;
     }
 
     // Inline-block all the things for "inline"
@@ -286,7 +286,7 @@ textarea.form-control {
       flex: 0 0 auto;
       flex-flow: row wrap;
       align-items: center;
-      margin-bottom: 0;
+      margin-top: 0;
     }
 
     // Allow folks to *not* use `.form-group`
@@ -327,7 +327,7 @@ textarea.form-control {
       justify-content: center;
     }
     .custom-control-label {
-      margin-bottom: 0;
+      margin-top: 0;
     }
   }
 }

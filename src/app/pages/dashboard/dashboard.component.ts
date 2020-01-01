@@ -8,13 +8,15 @@ import Chart from 'chart.js';
 export class DashboardComponent implements OnInit {
         public canvas: any;
         public ctx;
-        public datasets: any;
+        public variant: any;
         public contents: string;
         public contentsEn: string;
         public contentsHr: string;
         public clickedEn = false;
         public clickedHr = true;
-
+        public variantId: number;
+        private variantDataIds: any;
+        private variantProvenance: any;
         constructor() {
         }
 
@@ -252,6 +254,15 @@ export class DashboardComponent implements OnInit {
                         'olvidó hasta de hablar correctamente)- . ¡Ahora me estoy estirando como el telescopio más largo que haya existido ' +
                         'jamás! ¡Adiós, pies! - gritó, porque cuando miró hacia abajo vio que sus pies quedaban ya tan lejos que parecía' +
                         ' fuera a perderlos de vista- . ';
+                // variants: we have threr; the first entry refers to proband, the second to mother, and the third to father
+                this.variantProvenance = ['var-proband', 'var-mother', 'var-father'];
+                this.variantDataIds = ['vardat-0', 'vardat-1', 'vardat-2', 'vardat-3'];
+                this.variant = [
+                        [['-',  '-',  '-', '-'], ['-',  '-',  '-', '-'], ['-',  '-',  '-', '-']],
+                        [[ 'A',  'T', '-', '200'], ['A',  'A',  '-', '175'], ['T',  'T',  '-', '215']],
+                        [[ 'G',  'G', '-', '155'], ['G',  'C',  '-', '100'], ['G',  'C',  '-', '100']]
+                ];
+                this.loadVariantTable();
                 /////////////////////////////////////////////////
                 this.canvas = document.getElementById('CountryChart');
                 this.ctx = this.canvas.getContext('2d');
@@ -287,9 +298,63 @@ export class DashboardComponent implements OnInit {
 
         }
 
-        public descriptionUpdateOptions() {
+        private formatRadioButton(i) {
+                let  retstr = '<div class="form-check"> ';
+                retstr += `<label id="var-${i}" class="form-check-label">`;
+                retstr += '<input class="form-check-input" type="radio"/>';
+                retstr += '</label></div>';
+                return retstr;
+        }
+
+        private onVariantClickHandler(e) {
+                console.log('I hear you');
+                if (e.target !== e.currentTarget) {
+                        // TODO: at runtime, the page does not know what is "this"
+                        // check out Promise
+                        const clickedItem  =  e.target.id;
+                        this.variantId = clickedItem.split('-')[1];
+                        this.variantUpdate();
+                }
+                e.stopPropagation();
+        }
+
+
+        private loadVariantTable() {
+                const table: HTMLTableElement = document.getElementById('variant-table') as HTMLTableElement;
+                const probandIndex = 0;
+                for (let i = 0; i < this.variant.length; i++) {
+                        // Index (i here) is required in Firefox and Opera, optional in IE, Chrome and Safari.
+                        const row: HTMLTableRowElement = table.insertRow(i);
+                        row.insertCell(0).innerHTML = this.formatRadioButton(i);
+                        row.insertCell(1).innerHTML = this.variant[i][probandIndex][1];
+                }
+                // count on event propagation to get to table, whichever row was clicked
+                // (I do not want 1000 event listeners on the page)
+                table.addEventListener('click',
+                        (event) => {this.onVariantClickHandler(event); },
+                        false);
+        }
+
+        public descriptionUpdate() {
                 document.getElementById('case-description').textContent = this.contents;
                 // this.myChartData.data.datasets[0].data = this.data;
                 // this.myChartData.update();
+        }
+
+
+        private fillVariantDetails(element, sourceIndex) {
+                for (let i = 0; i < this.variantDataIds.length; i++) {
+                       element.getElementsByClassName(this.variantDataIds[i])[0].textContent =
+                                this.variant[this.variantId][sourceIndex][i];
+                }
+        }
+
+
+        public variantUpdate() {
+                // loop over sources/provenance: proband, mother, father
+                for (let i = 0; i < this.variantProvenance.length; i++) {
+                     const variantDetails = document.getElementById(this.variantProvenance[i]);
+                     this.fillVariantDetails(variantDetails, i);
+                }
         }
 }

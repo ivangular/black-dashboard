@@ -73,6 +73,7 @@
 .form-check input[type="checkbox"],
 .radio input[type="radio"]{
   opacity: 0;
+  margin-top: 0;
   position: absolute;
   visibility: hidden;
 }

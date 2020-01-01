@@ -1,0 +1,48 @@
+                           <tr>
+                                <td>
+                                    <div class=" form-check">
+                                        <label  (click)="variantId=1;variantUpdate();"
+                                                class=" form-check-label">
+                                            <input
+                                                    class=" form-check-input"
+                                                    type="radio"
+                                                    value="second"
+                                            />
+
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <p class=" title">Update the Documentation</p>
+                                    <p class=" text-muted">
+                                        Dwuamish Head, Seattle, WA 8:47 AM
+                                    </p>
+                                </td>
+                                <td class=" td-actions text-right">
+                                 </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class=" form-check">
+                                        <label (click)="variantId=2;variantUpdate();"
+                                                class=" form-check-label">
+                                            <input
+                                                    class=" form-check-input"
+                                                    type="radio"
+                                                    value="second"
+                                            />
+
+                                        </label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <p class=" title">GDPR Compliance</p>
+                                    <p class=" text-muted">
+                                        The GDPR is a regulation that requires businesses to
+                                        protect the personal data and privacy of Europe citizens
+                                        for transactions that occur within EU member states.
+                                    </p>
+                                </td>
+                                <td class=" td-actions text-right">
+                                 </td>
+                            </tr>
