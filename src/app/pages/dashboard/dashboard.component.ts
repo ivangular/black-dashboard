@@ -310,7 +310,7 @@ export class DashboardComponent implements OnInit {
                         console.log(e);
                         console.log('variantId: ' + variantId);
                         this.variantUpdate(variantId);
-                        this.geneInfoUpdate(7157);
+                        this.geneInfoUpdate('P04637');
                  }
                  e.stopPropagation();
         }
@@ -355,12 +355,13 @@ export class DashboardComponent implements OnInit {
                 }
         }
 
-        private getGeneInfo(geneId) {
+        private geneInfoUpdate(uniprotId) {
+                // CORS compliance problem
                 // this trick did not work for plain javscript fetch (empty response body)
                 // const url = `https://cors-anywhere.herokuapp.com/https://www.ncbi.nlm.nih.gov/gene/${geneId}`;
                 // note this: http://lindenb.github.io/pages/cors/index.html (bioinf services supporting CORS)
                 // const url = `https://www.ncbi.nlm.nih.gov/gene/${geneId}`;
-                const url = `https://www.uniprot.org/uniprot/P02763.xml`;
+                const url = `https://www.uniprot.org/uniprot/${uniprotId}.xml`;
                 // mode cors is actually the default - the problem is on the server side
                 fetch(url, {mode: 'cors'})
                         .then(response => {
@@ -368,11 +369,13 @@ export class DashboardComponent implements OnInit {
                                 return response.text();
                         })
                         .then(html => {
-
+                                let geneFunction = '';
+                                let geneExpression = '';
+                                let disease = '';
                                 // Initialize the DOM parser
                                 const parser = new DOMParser();
 
-                                // Parse the text
+                                // Parse the text - dummy document, so we can use JS DOM tree parsing
                                 const doc = parser.parseFromString (html, 'text/xml');
 
                                 // You can now even select part of that html as you would in the regular DOM
@@ -380,21 +383,41 @@ export class DashboardComponent implements OnInit {
                                 const ellist: any = doc.getElementsByTagName('comment');
                                 for (const element of ellist) {
                                         if (element.getAttribute('type') === 'function') {
-                                                console.log(element.textContent);
-                                                document.getElementById('gene-summary').textContent = element.textContent;
-                                                return element.textContent;
-                                        }
+                                                geneFunction += `<p>${element.textContent}</p>` ;
+                                        } else if (element.getAttribute('type') === 'tissue specificity') {
+                                                geneExpression += `<p>${element.textContent}</p>` ;
+                                        } else if (element.getAttribute('type') === 'disease') {
+                                                const child = element.children[0];
+                                                if (child.tagName === 'disease') {
+                                                    disease += '<p>';
+                                                    disease += `<b>${child.getElementsByTagName('name')[0].textContent}</b>`;
+                                                        // tslint:disable-next-line:max-line-length
+                                                    disease += `&nbsp;<b>(${child.getElementsByTagName('acronym')[0].textContent}).</b>&nbsp;`;
+                                                    disease += `${child.getElementsByTagName('description')[0].textContent}</p>`;
+                                                } else {
+                                                    disease += `<p>${element.textContent}</p>`;
+                                                }
+                                       }
                                 }
-                                return 'no summary element found';
+                                let geneSummaryHtml = '';
+                                if (geneFunction.length > 0) {
+                                    geneSummaryHtml += '<h5 class="card-subtitle">FUNCTION</h5>' + geneFunction;
+                                }
+                                if (geneExpression.length > 0) {
+                                    geneSummaryHtml += '<h5 class="card-subtitle">EXPRESSION</h5>' + geneExpression;
+                                }
+                                if (disease.length > 0) {
+                                    geneSummaryHtml += '<h5 class="card-subtitle">DISEASE</h5>' + disease;
+                                }
+                                // this document now refers to our page
+                                document.getElementById('gene-summary').innerHTML = geneSummaryHtml;
                         })
                         .catch(err => {
+                                // this document now refers to our page
                                 document.getElementById('gene-summary').textContent = 'Problem fetching the page';
                                 console.log('Failed to fetch page: ', err);
                         });
 
         }
 
-        private geneInfoUpdate(geneId) {
-                this.getGeneInfo(geneId);
-        }
-}
+  }
