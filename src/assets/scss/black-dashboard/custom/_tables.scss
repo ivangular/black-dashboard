@@ -134,6 +134,25 @@
        top: 4px;
        text-align: right;
    }
+
+   // border is making the contents visibly shift, while the outline does not
+   // still I want it ont hte inside, thus the outline with negative offset
+  .tr-clickable{
+
+      :hover {
+        outline-width: 1px;
+        outline-style: solid;
+        outline-color: pink;
+        outline-offset: -2px;
+      }
+  }
+  .tr-clicked {
+      outline-width: 1px;
+      outline-style: solid;
+      outline-color:  darkred;
+      outline-offset: -2px;
+
+  }
    .td-total{
         font-weight: $font-weight-bold;
         font-size: $h5-font-size;

@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import Chart from 'chart.js';
 
+
 @Component({
         selector: 'app-dashboard',
         templateUrl: 'dashboard.component.html'
@@ -14,7 +15,6 @@ export class DashboardComponent implements OnInit {
         public contentsHr: string;
         public clickedEn = false;
         public clickedHr = true;
-        public variantId: number;
         private variantDataIds: any;
         private variantProvenance: any;
         constructor() {
@@ -298,24 +298,21 @@ export class DashboardComponent implements OnInit {
 
         }
 
-        private formatRadioButton(i) {
-                let  retstr = '<div class="form-check"> ';
-                retstr += `<label id="var-${i}" class="form-check-label">`;
-                retstr += '<input class="form-check-input" type="radio"/>';
-                retstr += '</label></div>';
-                return retstr;
-        }
-
         private onVariantClickHandler(e) {
-                console.log('I hear you');
-                if (e.target !== e.currentTarget) {
-                        // TODO: at runtime, the page does not know what is "this"
-                        // check out Promise
-                        const clickedItem  =  e.target.id;
-                        this.variantId = clickedItem.split('-')[1];
-                        this.variantUpdate();
-                }
-                e.stopPropagation();
+                 if (e.target !== e.currentTarget) {
+                        const parentRow    =   e.target.closest('tr');
+                        for ( const child of parentRow.parentElement.children) {
+                                child.classList.remove('tr-clicked');
+                        }
+                        parentRow.classList.add('tr-clicked');
+                        const clickedItem  =  parentRow.id;
+                        const variantId = clickedItem.split('-')[1];
+                        console.log(e);
+                        console.log('variantId: ' + variantId);
+                        this.variantUpdate(variantId);
+                        this.geneInfoUpdate(7157);
+                 }
+                 e.stopPropagation();
         }
 
 
@@ -325,13 +322,15 @@ export class DashboardComponent implements OnInit {
                 for (let i = 0; i < this.variant.length; i++) {
                         // Index (i here) is required in Firefox and Opera, optional in IE, Chrome and Safari.
                         const row: HTMLTableRowElement = table.insertRow(i);
-                        row.insertCell(0).innerHTML = this.formatRadioButton(i);
-                        row.insertCell(1).innerHTML = this.variant[i][probandIndex][1];
+                        row.setAttribute('id', `var-${i}`);
+                        row.setAttribute('class', 'tr-clickable');
+                         // row.insertCell(0).innerHTML = this.formatRadioButton(i);
+                        row.insertCell(0).innerHTML = this.variant[i][probandIndex][1];
                 }
                 // count on event propagation to get to table, whichever row was clicked
                 // (I do not want 1000 event listeners on the page)
                 table.addEventListener('click',
-                        (event) => {this.onVariantClickHandler(event); },
+                        this.onVariantClickHandler.bind(this),
                         false);
         }
 
@@ -341,20 +340,61 @@ export class DashboardComponent implements OnInit {
                 // this.myChartData.update();
         }
 
-
-        private fillVariantDetails(element, sourceIndex) {
+        private fillVariantDetails(element, variantId, sourceIndex) {
                 for (let i = 0; i < this.variantDataIds.length; i++) {
                        element.getElementsByClassName(this.variantDataIds[i])[0].textContent =
-                                this.variant[this.variantId][sourceIndex][i];
+                                this.variant[variantId][sourceIndex][i];
                 }
         }
 
-
-        public variantUpdate() {
+        private variantUpdate(variantId) {
                 // loop over sources/provenance: proband, mother, father
-                for (let i = 0; i < this.variantProvenance.length; i++) {
-                     const variantDetails = document.getElementById(this.variantProvenance[i]);
-                     this.fillVariantDetails(variantDetails, i);
+                for (let sourceIndex = 0; sourceIndex < this.variantProvenance.length; sourceIndex++) {
+                     const variantDetails = document.getElementById(this.variantProvenance[sourceIndex]);
+                     this.fillVariantDetails.bind(this)(variantDetails, variantId, sourceIndex);
                 }
+        }
+
+        private getGeneInfo(geneId) {
+                // this trick did not work for plain javscript fetch (empty response body)
+                // const url = `https://cors-anywhere.herokuapp.com/https://www.ncbi.nlm.nih.gov/gene/${geneId}`;
+                // note this: http://lindenb.github.io/pages/cors/index.html (bioinf services supporting CORS)
+                // const url = `https://www.ncbi.nlm.nih.gov/gene/${geneId}`;
+                const url = `https://www.uniprot.org/uniprot/P02763.xml`;
+                // mode cors is actually the default - the problem is on the server side
+                fetch(url, {mode: 'cors'})
+                        .then(response => {
+                                // When the page is loaded convert it to text
+                                return response.text();
+                        })
+                        .then(html => {
+
+                                // Initialize the DOM parser
+                                const parser = new DOMParser();
+
+                                // Parse the text
+                                const doc = parser.parseFromString (html, 'text/xml');
+
+                                // You can now even select part of that html as you would in the regular DOM
+                                // HTMLCollection is typed as having a forEach method but it does not. (a feature)
+                                const ellist: any = doc.getElementsByTagName('comment');
+                                for (const element of ellist) {
+                                        if (element.getAttribute('type') === 'function') {
+                                                console.log(element.textContent);
+                                                document.getElementById('gene-summary').textContent = element.textContent;
+                                                return element.textContent;
+                                        }
+                                }
+                                return 'no summary element found';
+                        })
+                        .catch(err => {
+                                document.getElementById('gene-summary').textContent = 'Problem fetching the page';
+                                console.log('Failed to fetch page: ', err);
+                        });
+
+        }
+
+        private geneInfoUpdate(geneId) {
+                this.getGeneInfo(geneId);
         }
 }
