@@ -1,5 +1,6 @@
 <div class=" content">
 
+    <!--TODO sidebar disappears when the screen is to narrow -->
     <!-- 4 refers to "out of 12", that is 4/12 aka  1/3 or 33.33% -->
 
     <div class="row">
@@ -56,7 +57,7 @@
         <!-- The Bootstrap grid system has four classes: xs (phones), sm (tablets), md (desktops), and lg (larger desktops).  -->
         <!-- so this is going to be 1/2 on larger desktops, or fullwidth anything smaller -->
         <div class=" col-lg-6 col-md-12">
-            <div class=" card card-tasks">
+            <div class=" card card-variants">
                 <div class=" card-header">
                     <h4 class=" title d-inline">Variants</h4>
                     <p class=" card-category d-inline">all chromosomes</p>
@@ -85,7 +86,7 @@
                         <table class="table" id="variant-table">
                             <tbody>
 
-                           </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -164,24 +165,24 @@
                 </div>
             </div>
 
-            <div class=" card card-chart">
+            <div class=" card card-scrollable">
                 <div class=" card-header">
                     <h5 class=" card-category">Related diseases</h5>
                     <h3 class=" card-title">
-                        <i class=" tim-icons icon-delivery-fast text-info"> </i> 3,500€
+                        TP53
                     </h3>
                 </div>
                 <div class=" card-body">
-                    <div class=" chart-area">
-                        <canvas id="CountryChart"></canvas>
+                    <div class= "scrollable-text">
+                         <div id="gene-diseases">The known diseases should appear here.</div>
                     </div>
                 </div>
             </div>
-            <div class=" card card-chart">
+            <div class=" card card-interactants">
                 <div class=" card-header">
                     <h5 class=" card-category">Interaction neighborhood</h5>
                     <h3 class=" card-title">
-                        <i class=" tim-icons icon-send text-success"> </i> 12,100K
+                        TP53
                     </h3>
                     <div ngbDropdown>
                         <button class=" btn btn-link btn-icon"
@@ -199,12 +200,17 @@
                             <a href="javascript:void(0)" ngbDropdownItem> Metabolic </a>
                             <a href="javascript:void(0)" ngbDropdownItem> Genetic </a>
                         </div>
-                    </div>               </div>
+                    </div>  </div>
                 <div class=" card-body">
-                    <div class=" chart-area">
-                        <canvas id="chartLineGreen"></canvas>
+                    <div class=" table-full-width table-responsive">
+                        <table class="table" id="interactant-table">
+                            <tbody>
+
+                            </tbody>
+                        </table>
                     </div>
-                </div>
+
+                 </div>
             </div>
         </div>
     </div>

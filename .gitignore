@@ -41,7 +41,7 @@ sys_tfm
 .creds
 *.blastp
 *.txt
-
+communication.json
 
 
 # OS generated files #
@@ -56,3 +56,4 @@ Thumbs.db
 /node_modules/
 /e2e/
 /documentation/
+/src/app/pages/dashboard/communication.json

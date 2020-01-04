@@ -1,0 +1,305 @@
+<html>
+<head>
+   <title>Bioinformatics services supporting CORS</title>
+   <link href="../../resources/bootstrap/css/bootstrap.min.css" rel="stylesheet"></link>
+   <link href="../../resources/css/lindenb.css" rel="stylesheet"></link>
+   <script src="../../resources/js/jquery/jquery-2.1.0.min.js"></script>
+   <script src="../../resources/bootstrap/js/bootstrap.min.js"></script>
+<style>
+
+</style>
+<script>
+// Biogrid rest is also ok, but requires access key https://wiki.thebiogrid.org/doku.php/biogridrest
+var targetIndex=-1;
+var TARGETS=[
+    {
+         "name":"TRRUST",
+        "url":"https://www.grnpedia.org/trrust/result.php?gene=TP63&species=human&confirm="
+
+    },
+    {
+        "name":"IntACT through cors-anywhere",
+        "url":"https://cors-anywhere.herokuapp.com/https://www.ebi.ac.uk/intact/interactors/id:P02763*"
+    },
+    {
+        "name":"KEGG through cors-anywhere",
+        "url":"https://cors-anywhere.herokuapp.com/http://rest.kegg.jp/get/pathway:map00600"
+    },
+    {
+        "name":"MetaCYC through cors-anywhere",
+        "url":"https://cors-anywhere.herokuapp.com/https://metacyc.org/gene?orgid=META&id=HS09033#tab=RXNS"
+    },
+ 	{
+  	"name":"OMIM",
+  	"url":"https://www.omim.org/entry/191170"
+	},
+	{
+  	"name":"GeneCards",
+  	"url":"https://www.genecards.org/cgi-bin/carddisp.pl?gene=TERC"
+	},
+	{
+		"name":"Ensembl REST",
+		"url":"http://rest.ensembl.org/xrefs/symbol/homo_sapiens/BRCA2?content-type=application/json;external_db=HGNC"
+	},
+	{
+		"name":"Ensembl Beta REST",
+		"url":"http://beta.rest.ensembl.org/xrefs/symbol/homo_sapiens/BRCA2?content-type=application/json"
+	},
+	{
+		"name":"EBI-eye REST",
+		"url":"http://www.ebi.ac.uk/ebisearch/ws/rest/uniprot/entry/WAP_RAT,WAP_MOUSE?format=json",
+	},
+	{
+		"name":"RNA Central",
+		"url":"http://rnacentral.org/api/v1/rna/URS0000000001/?flat=true"
+	},
+	{
+		"name":"RAID db",
+		"url":"http://www.rna-society.org/raid/api.php?type=keyword&&keywords=PTENP1&&interacttype=rri"
+	},
+	{
+		"name":"KEGG",
+		"url":"http://rest.kegg.jp/get/cpd:C01290+gl:G00092"
+	},
+	{
+		"name":"MyExperiment",
+		"url":"http://www.myexperiment.org/search.xml?query=bioaid&type=workflow"
+	},
+	{
+	"name":"psicquic/uniprot/wsdl",
+	"url":"http://www.ebi.ac.uk/Tools/webservices/psicquic/uniprot/webservices/psicquic?wsdl"
+	},
+	{
+	"name":"Biocatalogue",
+	"url":"https://www.biocatalogue.org/search.xml?q=blast+sequence&scope=services,soap_operations"
+	},
+	{
+		"name":"geonames",
+		"url":"http://api.geonames.org/postalCodeSearch?postalcode=9011&maxRows=10&username=demo"
+	},
+	{
+	"name":"Galaxy ToolShed",
+	"url":"http://toolshed.g2.bx.psu.edu/api/repositories"
+	},
+	{
+	"name":"EBI IntAct",
+	"url":"http://www.ebi.ac.uk/Tools/webservices/psicquic/intact/webservices/current/search/query/species:human?firstResult=0&maxResults=2"
+	},
+	{
+	"name":	"mygene.info",
+	"url":"http://mygene.info/v2/query?q=cdk2&species=human"
+	},
+	{
+	"name":"Biogrid",
+	"url":"http://webservice.thebiogrid.org/interactions/"
+	},
+	{
+	"name":"Biomart",
+	"url":"http://www.biomart.org/biomart/martservice/result?query=%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%0A%3C!DOCTYPE%20Query%3E%0A%3CQuery%20%20virtualSchemaName%20%3D%20%22default%22%20formatter%20%3D%20%22TSV%22%20header%20%3D%20%220%22%20uniqueRows%20%3D%20%220%22%20count%20%3D%20%22%22%20datasetConfigVersion%20%3D%20%220.6%22%20%3E%0A%0A%20%20%20%20%20%20%20%20%3CDataset%20name%20%3D%20%22hsapiens_gene_ensembl%22%20interface%20%3D%20%22default%22%20%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3CFilter%20name%20%3D%20%22chromosome_name%22%20value%20%3D%20%221%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3CFilter%20name%20%3D%20%22with_illumina_humanwg_6_v3%22%20excluded%20%3D%20%220%22%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3CAttribute%20name%20%3D%20%22ensembl_gene_id%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%3CAttribute%20name%20%3D%20%22ensembl_transcript_id%22%20%2F%3E%0A%20%20%20%20%20%20%20%20%3C%2FDataset%3E%0A%3C%2FQuery%3E"
+	},
+	{
+	"name":"Uniprot-jsonld",
+	"url":"http://www.uniprot.org/uniprot/P02763.jsonld"
+	},
+	{
+	"name":"Uniprot-xml",
+	"url":"http://www.uniprot.org/uniprot/P02763.xml"
+	},
+	{
+	"name":"NCBI (EINFO)",
+	"url":"http://eutils.ncbi.nlm.nih.gov/entrez/eutils/einfo.fcgi"
+	},
+	{
+	"name":"Wikipedia (OpenSearch)",
+	"url":"http://en.wikipedia.org/w/api.php?action=opensearch&search=Bioinformatics",
+	"xhrFields":{
+		"Origin": "http://lindenb.github.io",
+		"Content-Type": "application/json; charset=UTF-8"
+		}
+	},
+	{
+	"name":"NCBI BLAST",
+	"url":"http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=PUT&PROGRAM=blastn&DATABASE=nr&QUERY_BELIEVE_DEFLINE=false&ENTREZ_QUERY=gyra%20%5Bgene%5D%20AND%20AL123456.3%20AND%20txid83332%20%5BORGN%5D&QUERY=%3EPMID%2019846642%20Forward%0AATGTTCGATTCCGGCTTCC%0A%3EPMID%2019846642%20Reverse%0AGGGCTTCGGTGTACCTCAT%0A"
+	},
+	{
+	"name":"UCSC DAS/h19",
+	"url":"http://genome.ucsc.edu/cgi-bin/das/hg19/dna?segment=chr1:100000,100100"
+	},
+	{
+	"name":"QuickGO",
+	"url":"http://www.ebi.ac.uk/QuickGO/GAnnotation?tax=9606&relType=IP=&goid=GO:0003015&format=tsv"
+	},
+	{
+	"name":"UCSC Download Area",
+	"url":"http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql"
+	},
+	{
+	"name":"TogoWS",
+	"url":"http://togows.dbcls.jp/entry/genes/eco:b0002"
+	},
+	{
+		"name":"Github",
+		"url":"https://api.github.com/repos/lindenb/jvarkit"
+	},
+	{
+	"name":"OSM nominatim",
+	"url":"http://nominatim.openstreetmap.org/search?q=&city=versailles&state=yvelines&country=France&format=xml&polygon_kml=1&postalcode=78000&addressdetails=1"
+    }
+	];
+
+
+function reportCORS(result) 	{
+	var target= TARGETS[result.targetIndex];
+
+	var tr= document.createElement("tr");
+	tr.setAttribute("class","r"+(targetIndex%2));
+	var tbody=document.getElementById("tbody");
+	tbody.appendChild(tr);
+
+	var td= document.createElement("td");
+	td.appendChild(document.createTextNode(target.name));
+	tr.appendChild(td);
+
+	td= document.createElement("td");
+	if(result.statusCss) td.setAttribute("style",result.statusCss);
+	if(result.status) td.appendChild(document.createTextNode(result.status));
+	tr.appendChild(td);
+
+	td= document.createElement("td");
+	var anchor=document.createElement("a");
+	anchor.setAttribute("href",target.url);
+	anchor.setAttribute("target","_blank");
+	anchor.setAttribute("title",target.url);
+	anchor.appendChild(document.createTextNode(target.url.length>25?target.url.substr(0,25)+"...":target.url));
+	td.appendChild(anchor);
+	tr.appendChild(td);
+
+	td= document.createElement("td");
+	if(result.response)	{
+  		var maxLength=50;
+  		var c=document.createElement("code");
+  		c.appendChild(document.createTextNode(result.response.length>maxLength?result.response.substr(0,maxLength)+"...":result.response));
+  		td.appendChild(c);
+	}
+	tr.appendChild(td);
+}
+
+// Create the XHR object.
+function createCORSRequest(method, url) {
+  var xhr = new XMLHttpRequest();
+  if ("withCredentials" in xhr) {
+      // XHR for Chrome/Firefox/Opera/Safari.
+      xhr.open(method, url, true);
+  } else if (typeof XDomainRequest != "undefined") {
+      // XDomainRequest for IE.
+      xhr = new XDomainRequest();
+      xhr.open(method, url);
+  } else {
+      // CORS not supported.
+      xhr = null;
+  }
+  return xhr;
+}
+
+// Make the actual CORS request.
+function makeCorsRequest() {
+  targetIndex++;
+  if(targetIndex >= TARGETS.length ) return;
+  var nowIndex=targetIndex;
+
+  var target=TARGETS[targetIndex];
+  // All HTML5 Rocks properties support CORS.
+
+  var xhr = createCORSRequest('GET', target.url);
+  if (!xhr) {
+    	reportCORS( {
+      		"targetIndex":nowIndex,
+      		statusCss:"color:red",
+      		status:"CORS not supported"
+    	});
+    	return;
+  }
+  if(target.xhrFields) {
+  	for(var xhrField in target.xhrFields) {
+    		console.log(target.xhrFields[xhrField]);
+    		xhr.setRequestHeader(xhrField,target.xhrFields[xhrField]);
+  	}
+	}
+  // Response handlers.
+    xhr.onload = function() {
+    var text = xhr.responseText;
+    reportCORS(
+    	{
+    	"targetIndex":nowIndex,
+    	response: xhr.responseText,
+	statusCss:"color:green",
+	status:"OK"
+	}
+    	);
+  };
+
+  xhr.onerror = function() {
+  	reportCORS(
+    		{
+    		"targetIndex":nowIndex,
+    		statusCss:"color:red",
+    		status:"FAIL"
+    		});
+  };
+  try
+  	{
+	xhr.send();
+	}
+  catch(ex)
+  	{
+  	reportCORS(
+    		{
+    		"targetIndex":nowIndex,
+    		statusCss:"color:red",
+    		status:ex
+    		});
+  	}
+  setTimeout(makeCorsRequest,200);
+}
+window.addEventListener("load",function()
+	{
+	makeCorsRequest();
+	},false);
+</script>
+</head>
+
+
+<body>
+<div class="container">
+<div class="page-header">
+      <h1>Bioinformatics Services supporting Cross-origin resource sharing</h1>
+      <p><a href="https://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross-origin resource sharing/CORS</a>  is a mechanism that allows many resources (e.g. fonts, JavaScript, etc.) on a web page to be requested from another domain outside of the domain the resource originated from.</p>
+      <!-- <p><a class="btn btn-primary btn-lg" role="button" href="#">More...</a> -->
+</div>
+<div class="row">
+<table style="" width="100%">
+<thead>
+	<tr>
+		<th>Name</th>
+		<th>Status</th>
+		<th>URL</th>
+		<th>Response</th>
+	</tr>
+</thead>
+<tbody id="tbody">
+</tbody>
+</table>
+</div>
+
+
+
+<div class="row">
+<hr/>
+<div>Author: <a href="http://lindenb.github.io/">Pierre Lindenbaum PhD</a>.</div>
+</div>
+
+
+
+</div>
+</body>
+</html>

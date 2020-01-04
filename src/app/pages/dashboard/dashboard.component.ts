@@ -1,6 +1,10 @@
 import {Component, OnInit} from '@angular/core';
 import Chart from 'chart.js';
-
+// json import
+// https://medium.com/@baerree/angular-7-import-json-14f8bba534af
+// not sure why I need to ignore the linter here, because the import seems to be working ok
+// @ts-ignore
+import communication from './communication.json';
 
 @Component({
         selector: 'app-dashboard',
@@ -69,113 +73,16 @@ export class DashboardComponent implements OnInit {
                                 }]
                         }
                 };
-
-                const gradientChartOptionsConfigurationWithTooltipGreen: any = {
-                        maintainAspectRatio: false,
-                        legend: {
-                                display: false
-                        },
-
-                        tooltips: {
-                                backgroundColor: '#f5f5f5',
-                                titleFontColor: '#333',
-                                bodyFontColor: '#666',
-                                bodySpacing: 4,
-                                xPadding: 12,
-                                mode: 'nearest',
-                                intersect: 0,
-                                position: 'nearest'
-                        },
-                        responsive: true,
-                        scales: {
-                                yAxes: [{
-                                        barPercentage: 1.6,
-                                        gridLines: {
-                                                drawBorder: false,
-                                                color: 'rgba(29,140,248,0.0)',
-                                                zeroLineColor: 'transparent',
-                                        },
-                                        ticks: {
-                                                suggestedMin: 50,
-                                                suggestedMax: 125,
-                                                padding: 20,
-                                                fontColor: '#9e9e9e'
-                                        }
-                                }],
-
-                                xAxes: [{
-                                        barPercentage: 1.6,
-                                        gridLines: {
-                                                drawBorder: false,
-                                                color: 'rgba(0,242,195,0.1)',
-                                                zeroLineColor: 'transparent',
-                                        },
-                                        ticks: {
-                                                padding: 20,
-                                                fontColor: '#9e9e9e'
-                                        }
-                                }]
-                        }
-                };
-
-                const gradientBarChartConfiguration: any = {
-                        maintainAspectRatio: false,
-                        legend: {
-                                display: false
-                        },
-
-                        tooltips: {
-                                backgroundColor: '#f5f5f5',
-                                titleFontColor: '#333',
-                                bodyFontColor: '#666',
-                                bodySpacing: 4,
-                                xPadding: 12,
-                                mode: 'nearest',
-                                intersect: 0,
-                                position: 'nearest'
-                        },
-                        responsive: true,
-                        scales: {
-                                yAxes: [{
-
-                                        gridLines: {
-                                                drawBorder: false,
-                                                color: 'rgba(29,140,248,0.1)',
-                                                zeroLineColor: 'transparent',
-                                        },
-                                        ticks: {
-                                                suggestedMin: 60,
-                                                suggestedMax: 120,
-                                                padding: 20,
-                                                fontColor: '#9e9e9e'
-                                        }
-                                }],
-
-                                xAxes: [{
-
-                                        gridLines: {
-                                                drawBorder: false,
-                                                color: 'rgba(29,140,248,0.1)',
-                                                zeroLineColor: 'transparent',
-                                        },
-                                        ticks: {
-                                                padding: 20,
-                                                fontColor: '#9e9e9e'
-                                        }
-                                }]
-                        }
-                };
-
                 this.canvas = document.getElementById('chartLineRed');
                 this.ctx = this.canvas.getContext('2d');
 
-                let gradientStroke = this.ctx.createLinearGradient(0, 230, 0, 50);
+                const gradientStroke = this.ctx.createLinearGradient(0, 230, 0, 50);
 
                 gradientStroke.addColorStop(1, 'rgba(233,32,16,0.2)');
                 gradientStroke.addColorStop(0.4, 'rgba(233,32,16,0.0)');
                 gradientStroke.addColorStop(0, 'rgba(233,32,16,0)'); // red colors
 
-                let data = {
+                const data = {
                         labels: ['JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
                         datasets: [{
                                 label: 'Data',
@@ -196,53 +103,12 @@ export class DashboardComponent implements OnInit {
                         }]
                 };
 
-                let myChart = new Chart(this.ctx, {
+                const myChart = new Chart(this.ctx, {
                         type: 'line',
                         data,
                         options: gradientChartOptionsConfigurationWithTooltipRed
                 });
 
-
-                this.canvas = document.getElementById('chartLineGreen');
-                this.ctx = this.canvas.getContext('2d');
-
-
-                gradientStroke = this.ctx.createLinearGradient(0, 230, 0, 50);
-
-                gradientStroke.addColorStop(1, 'rgba(66,134,121,0.15)');
-                gradientStroke.addColorStop(0.4, 'rgba(66,134,121,0.0)'); // green colors
-                gradientStroke.addColorStop(0, 'rgba(66,134,121,0)'); // green colors
-
-                data = {
-                        labels: ['JUL', 'AUG', 'SEP', 'OCT', 'NOV'],
-                        datasets: [{
-                                label: 'My First dataset',
-                                fill: true,
-                                backgroundColor: gradientStroke,
-                                borderColor: '#00d6b4',
-                                borderWidth: 2,
-                                borderDash: [],
-                                borderDashOffset: 0.0,
-                                pointBackgroundColor: '#00d6b4',
-                                pointBorderColor: 'rgba(255,255,255,0)',
-                                pointHoverBackgroundColor: '#00d6b4',
-                                pointBorderWidth: 20,
-                                pointHoverRadius: 4,
-                                pointHoverBorderWidth: 15,
-                                pointRadius: 4,
-                                data: [90, 27, 60, 12, 80],
-                        }]
-                };
-
-                myChart = new Chart(this.ctx, {
-                        type: 'line',
-                        data,
-                        options: gradientChartOptionsConfigurationWithTooltipGreen
-
-                });
-
-
-                const chartLabels = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
                 /////////////////////////////////////////////////
                 // case description here
                 this.contentsEn = '‘Curiouser and curiouser!’ cried Alice (she was so much surprised, that for the moment she quite ' +
@@ -263,38 +129,6 @@ export class DashboardComponent implements OnInit {
                         [[ 'G',  'G', '-', '155'], ['G',  'C',  '-', '100'], ['G',  'C',  '-', '100']]
                 ];
                 this.loadVariantTable();
-                /////////////////////////////////////////////////
-                this.canvas = document.getElementById('CountryChart');
-                this.ctx = this.canvas.getContext('2d');
-                gradientStroke = this.ctx.createLinearGradient(0, 230, 0, 50);
-
-                gradientStroke.addColorStop(1, 'rgba(29,140,248,0.2)');
-                gradientStroke.addColorStop(0.4, 'rgba(29,140,248,0.0)');
-                gradientStroke.addColorStop(0, 'rgba(29,140,248,0)'); // blue colors
-
-
-                myChart = new Chart(this.ctx, {
-                        type: 'bar',
-                        responsive: true,
-                        legend: {
-                                display: false
-                        },
-                        data: {
-                                labels: ['USA', 'GER', 'AUS', 'UK', 'RO', 'BR'],
-                                datasets: [{
-                                        label: 'Countries',
-                                        fill: true,
-                                        backgroundColor: gradientStroke,
-                                        hoverBackgroundColor: gradientStroke,
-                                        borderColor: '#1f8ef1',
-                                        borderWidth: 2,
-                                        borderDash: [],
-                                        borderDashOffset: 0.0,
-                                        data: [53, 20, 10, 80, 100, 45],
-                                }]
-                        },
-                        options: gradientBarChartConfiguration
-                });
 
         }
 
@@ -307,14 +141,12 @@ export class DashboardComponent implements OnInit {
                         parentRow.classList.add('tr-clicked');
                         const clickedItem  =  parentRow.id;
                         const variantId = clickedItem.split('-')[1];
-                        console.log(e);
-                        console.log('variantId: ' + variantId);
                         this.variantUpdate(variantId);
                         this.geneInfoUpdate('P04637');
+                        this.interactionUpdate('TP53', 'P04637');
                  }
                  e.stopPropagation();
         }
-
 
         private loadVariantTable() {
                 const table: HTMLTableElement = document.getElementById('variant-table') as HTMLTableElement;
@@ -357,8 +189,6 @@ export class DashboardComponent implements OnInit {
 
         private geneInfoUpdate(uniprotId) {
                 // CORS compliance problem
-                // this trick did not work for plain javscript fetch (empty response body)
-                // const url = `https://cors-anywhere.herokuapp.com/https://www.ncbi.nlm.nih.gov/gene/${geneId}`;
                 // note this: http://lindenb.github.io/pages/cors/index.html (bioinf services supporting CORS)
                 // const url = `https://www.ncbi.nlm.nih.gov/gene/${geneId}`;
                 const url = `https://www.uniprot.org/uniprot/${uniprotId}.xml`;
@@ -406,18 +236,78 @@ export class DashboardComponent implements OnInit {
                                 if (geneExpression.length > 0) {
                                     geneSummaryHtml += '<h5 class="card-subtitle">EXPRESSION</h5>' + geneExpression;
                                 }
-                                if (disease.length > 0) {
-                                    geneSummaryHtml += '<h5 class="card-subtitle">DISEASE</h5>' + disease;
-                                }
                                 // this document now refers to our page
                                 document.getElementById('gene-summary').innerHTML = geneSummaryHtml;
+                                if (disease.length > 0) {
+                                    document.getElementById('gene-diseases').innerHTML = disease;
+                                } else {
+                                    document.getElementById('gene-diseases').innerHTML = '<p>No related diseases found.</p>';
+                                }
                         })
                         .catch(err => {
                                 // this document now refers to our page
                                 document.getElementById('gene-summary').textContent = 'Problem fetching the page';
                                 console.log('Failed to fetch page: ', err);
                         });
+       }
 
+        // https://cors-anywhere.herokuapp.com/https://www.ebi.ac.uk/intact/interactors/id:P02763*
+        // https://webservice.thebiogrid.org/interactions/?searchNames=true&geneList=MDM2&includeInteractors=true&taxId=9606
+        // &max=10&accesskey=xxxxx
+        private processBiogridTable(rawTable, query) {
+                const pubmed = {};
+                for (const line of rawTable.split('\n')) {
+                        const field = line.split('\t');
+                        // entrezA:1 entrezB:2 officialA:7  officialB:8  expSysType:12 (physical or genetic) pubMedID:14
+                        if (field[12] !== 'physical') { continue; }
+                        let interactant = field[7];
+                        if (interactant === query) {
+                                interactant = field[8];
+                        }
+                        if (!pubmed.hasOwnProperty(interactant)) {pubmed[interactant] = new Set(); }
+                        pubmed[interactant].add(field[14]);
+                }
+                // ? Requires a for ... in statement to be filtered with an if statement.
+                // if (someObject.hasOwnProperty(key)) (to protect from iterating over
+                // keys inherited from the prototype
+                const table: HTMLTableElement = document.getElementById('interactant-table') as HTMLTableElement;
+                for (const geneName in pubmed) {
+                        if (!pubmed.hasOwnProperty(geneName) || pubmed[geneName].size < 2 ) {continue; }
+                        const row: HTMLTableRowElement = table.insertRow();
+                        // row.insertCell(0).innerHTML = this.formatRadioButton(i);
+                        // TODO - gene link to entrez, pubmedId to pubmed, OMIM link
+                        row.insertCell(0).innerHTML = geneName;
+                        row.insertCell(1).innerHTML = Array.from(pubmed[geneName].values()).join(', ');
+               }
         }
 
+        private interactionUpdate(geneName, uniprotId) {
+                //  throughputTag If set to 'low or 'high', only interactions with 'Low throughput'
+                //  or 'High throughput' in the 'throughput' field will be returned. Interactions with both 'Low throughput'
+                //  and 'High throughput' will be returned by either value.
+                // https://wiki.thebiogrid.org/doku.php/biogridrest
+                // header
+                // BioGRID Interaction ID	Entrez Gene Interactor A	Entrez Gene Interactor B
+                // BioGRID ID Interactor A	BioGRID ID Interactor B	Systematic Name Interactor A
+                // Systematic Name Interactor B	Official Symbol Interactor A	Official Symbol Interactor B
+                // Synonyms Interactor A	Synonyms Interactor B	Experimental System	Experimental System Type
+                // Author	Pubmed ID	Organism Interactor A	Organism Interactor B	Throughput	Score	Modification
+                // Phenotypes	Qualifications	Tags	Source Database
+                let url = `https://webservice.thebiogrid.org/interactions/?searchNames=true&geneList=${geneName}`;
+                url += '&includeInteractors=true&taxId=9606&throughputTag=low&includeHeader=true';
+                url += `&max=100&accesskey=${communication.biogrid}`;
+                fetch(url, {mode: 'cors'})
+                        .then(response => {
+                                // When the page is loaded convert it to text
+                                return response.text();
+                        })
+                        .then(rawTable => {
+                                this.processBiogridTable(rawTable, geneName);
+                        })
+                        .catch(err => {
+                                // this document now refers to our page
+                                // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
+                                console.log('Failed to fetch page: ', err);
+                        });
+       }
   }
