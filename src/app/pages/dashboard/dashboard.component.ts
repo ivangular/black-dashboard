@@ -21,6 +21,9 @@ export class DashboardComponent implements OnInit {
         public clickedHr = true;
         private variantDataIds: any;
         private variantProvenance: any;
+        private biogridHTMLtable: any = null;
+        private trrustHTMLtable: any = null;
+        private keggHTMLtable: any = null;
         constructor() {
         }
 
@@ -251,10 +254,34 @@ export class DashboardComponent implements OnInit {
                         });
        }
 
+        public setInteractionTable(tableSource) {
+                if (tableSource === 'biogrid') {
+                        console.log('setting biogrid');
+                        if (this.biogridHTMLtable === null) {return; }
+                        const oldTable =  document.getElementById('interactant-table');
+                        // note the order here replaceChild (newChild, oldChild);
+                        oldTable.parentNode.replaceChild(this.biogridHTMLtable, oldTable);
+                } else if (tableSource === 'trrust') {
+                        console.log('setting trrust');
+                        if (this.trrustHTMLtable === null) {return; }
+                        const oldTable =  document.getElementById('interactant-table');
+                        // note the order here replaceChild (newChild, oldChild);
+                        oldTable.parentNode.replaceChild(this.trrustHTMLtable, oldTable);
+                } else if (tableSource === 'kegg') {
+                        console.log('setting kegg');
+                        if (this.keggHTMLtable === null) {return; }
+                        const oldTable =  document.getElementById('interactant-table');
+                        // note the order here replaceChild (newChild, oldChild);
+                        oldTable.parentNode.replaceChild(this.keggHTMLtable, oldTable);
+                }
+        }
         // https://cors-anywhere.herokuapp.com/https://www.ebi.ac.uk/intact/interactors/id:P02763*
         // https://webservice.thebiogrid.org/interactions/?searchNames=true&geneList=MDM2&includeInteractors=true&taxId=9606
         // &max=10&accesskey=xxxxx
         private processBiogridTable(rawTable, query) {
+                // this does not work,  the object is missing some stuff that  document.createElement takes care of
+                // this.biogridHTMLtable = new HTMLTableElement();
+                this.biogridHTMLtable = document.createElement('table');
                 const pubmed = {};
                 for (const line of rawTable.split('\n')) {
                         const field = line.split('\t');
@@ -270,18 +297,21 @@ export class DashboardComponent implements OnInit {
                 // ? Requires a for ... in statement to be filtered with an if statement.
                 // if (someObject.hasOwnProperty(key)) (to protect from iterating over
                 // keys inherited from the prototype
-                const table: HTMLTableElement = document.getElementById('interactant-table') as HTMLTableElement;
                 for (const geneName in pubmed) {
                         if (!pubmed.hasOwnProperty(geneName) || pubmed[geneName].size < 2 ) {continue; }
-                        const row: HTMLTableRowElement = table.insertRow();
+                        const row: HTMLTableRowElement = this.biogridHTMLtable.insertRow();
                         // row.insertCell(0).innerHTML = this.formatRadioButton(i);
                         // TODO - gene link to entrez, pubmedId to pubmed, OMIM link
                         row.insertCell(0).innerHTML = geneName;
                         row.insertCell(1).innerHTML = Array.from(pubmed[geneName].values()).join(', ');
-               }
+                }
+                const classList: any = document.getElementById('interactant-table').classList;
+                for (const elClass of classList) {
+                        this.biogridHTMLtable.classList.add(elClass);
+                }
+                this.biogridHTMLtable.id = 'interactant-table';
         }
-
-        private interactionUpdate(geneName, uniprotId) {
+        private biogridUpdate(geneName) {
                 //  throughputTag If set to 'low or 'high', only interactions with 'Low throughput'
                 //  or 'High throughput' in the 'throughput' field will be returned. Interactions with both 'Low throughput'
                 //  and 'High throughput' will be returned by either value.
@@ -303,11 +333,76 @@ export class DashboardComponent implements OnInit {
                         })
                         .then(rawTable => {
                                 this.processBiogridTable(rawTable, geneName);
+                                const oldTable =  document.getElementById('interactant-table');
+                               // note the order here replaceChild (newChild, oldChild);
+                                oldTable.parentNode.replaceChild(this.biogridHTMLtable, oldTable);
                         })
                         .catch(err => {
                                 // this document now refers to our page
                                 // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
-                                console.log('Failed to fetch page: ', err);
+                                console.log('Failed to fetch biogrid page: ', err);
                         });
-       }
+        }
+        private processTrrustTable(rawTable) {
+                this.trrustHTMLtable = document.createElement('table');
+                for (const line of rawTable.split('\n')) {
+                        // entrezA:1 entrezB:2 officialA:7  officialB:8  expSysType:12 (physical or genetic) pubMedID:14
+                        const row: HTMLTableRowElement = this.trrustHTMLtable.insertRow();
+                        // row.insertCell(0).innerHTML = this.formatRadioButton(i);
+                        // TODO - gene link to entrez, pubmedId to pubmed, OMIM link
+                        // index is optional in insertCell
+                        for (const field of line.split('\t')) {
+                                row.insertCell().innerHTML = field;
+                        }
+                }
+                const classList: any = document.getElementById('interactant-table').classList;
+                for (const elClass of classList) {
+                        this.trrustHTMLtable.classList.add(elClass);
+                }
+                this.trrustHTMLtable.id = 'interactant-table';
+        }
+        private trrustUpdate(geneName, pieceOne) {
+                // TP63 targets
+                // "url":"https://www.grnpedia.org/trrust/export_tsv.php?tabletype=TF&gene=TP63&species=human"
+                // TFs that regulate TP63
+                // url = `https://www.grnpedia.org/trrust/export_tsv.php?tabletype=TG&gene=${geneName}&species=human`;
+                const  url = pieceOne === '' ? `https://www.grnpedia.org/trrust/export_tsv.php?tabletype=TF&gene=${geneName}&species=human`
+                        : `https://www.grnpedia.org/trrust/export_tsv.php?tabletype=TG&gene=${geneName}&species=human`;
+                fetch(url, {mode: 'cors'})
+                        .then(async response => {
+                                // When the page is loaded convert it to text
+                                const  retText: string = await response.text();
+                                if (pieceOne === '') {
+                                    this.trrustUpdate(geneName, retText);
+                                }
+                                return retText;
+                        })
+                        .then(rawTable => {
+                                if (pieceOne === '' ) {
+                                        return rawTable;
+                                } else {
+                                        this.processTrrustTable(pieceOne + rawTable);
+                                }
+                        })
+                        .catch(err => {
+                                // this document now refers to our page
+                                // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
+                                console.log('Failed to fetch trrust page: ', err);
+                                return '';
+                        });
+        }
+        private keggUpdate(geneName) {
+            // get KEGG id: http://rest.kegg.jp/conv/genes/uniprot:P02763
+            // get pathways related to gene id:  http://rest.kegg.jp/link/pathway/hsa:10993
+            // get all genes related to pathway id: http://rest.kegg.jp/link/hsa/pathway:hsa01200
+            // link to  gene info https://www.kegg.jp/dbget-bin/www_bget?hsa:10993
+            return;
+        }
+        private interactionUpdate(geneName, uniprotId) {
+                // BioGrid - protein-protein interactions
+                this.biogridUpdate(geneName); // sets the table when done
+                // TRRUST - transcription factors and their targets
+                this.trrustUpdate(geneName, '');
+                // KEGG - pathways
+        }
   }
