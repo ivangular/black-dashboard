@@ -275,8 +275,7 @@ export class DashboardComponent implements OnInit {
                         oldTable.parentNode.replaceChild(this.keggHTMLtable, oldTable);
                 }
         }
-        // https://cors-anywhere.herokuapp.com/https://www.ebi.ac.uk/intact/interactors/id:P02763*
-        // https://webservice.thebiogrid.org/interactions/?searchNames=true&geneList=MDM2&includeInteractors=true&taxId=9606
+         // https://webservice.thebiogrid.org/interactions/?searchNames=true&geneList=MDM2&includeInteractors=true&taxId=9606
         // &max=10&accesskey=xxxxx
         private processBiogridTable(rawTable, query) {
                 // this does not work,  the object is missing some stuff that  document.createElement takes care of
@@ -294,7 +293,7 @@ export class DashboardComponent implements OnInit {
                         if (!pubmed.hasOwnProperty(interactant)) {pubmed[interactant] = new Set(); }
                         pubmed[interactant].add(field[14]);
                 }
-                // ? Requires a for ... in statement to be filtered with an if statement.
+                // ? Requires a (for ... in) statement to be filtered with an if statement.
                 // if (someObject.hasOwnProperty(key)) (to protect from iterating over
                 // keys inherited from the prototype
                 for (const geneName in pubmed) {
@@ -391,18 +390,67 @@ export class DashboardComponent implements OnInit {
                                 return '';
                         });
         }
-        private keggUpdate(geneName) {
-            // get KEGG id: http://rest.kegg.jp/conv/genes/uniprot:P02763
-            // get pathways related to gene id:  http://rest.kegg.jp/link/pathway/hsa:10993
-            // get all genes related to pathway id: http://rest.kegg.jp/link/hsa/pathway:hsa01200
-            // link to  gene info https://www.kegg.jp/dbget-bin/www_bget?hsa:10993
-            return;
+        // https://cors-anywhere.herokuapp.com/https://www.ebi.ac.uk/intact/interactors/id:P02763*
+        private keggPathwayFromKeggGene(keggGeneId) {
+                // get pathways related to gene id:  http://rest.kegg.jp/link/pathway/hsa:10993
+                // get all genes related to pathway id: http://rest.kegg.jp/link/hsa/pathway:hsa01200
+                // link to  gene info https://www.kegg.jp/dbget-bin/www_bget?hsa:10993
+                const  url = `https://cors-anywhere.herokuapp.com/http://rest.kegg.jp/link/pathway/hsa:${keggGeneId}`;
+                fetch(url, {mode: 'cors'})
+                        .then(response => {
+                                // When the page is loaded convert it to text
+                                return response.text();
+                        })
+                        .then(idResponse => {
+                                // the format is somehting like    up:P02763	hsa:5004
+                                // const geneId = idResponse.split('\t')[1].split(':')[1];
+                                console.log(idResponse);
+                        })
+                        .catch(err => {
+                                // this document now refers to our page
+                                // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
+                                console.log('Failed to fetch keggIdtranslation: ', err);
+                                return '';
+                        });
+                return;
+        }
+        private keggIdFromUniprot(uniprotId) {
+                // get KEGG id: http://rest.kegg.jp/conv/genes/uniprot:P02763
+                // get pathways related to gene id:  http://rest.kegg.jp/link/pathway/hsa:10993
+                // get all genes related to pathway id: http://rest.kegg.jp/link/hsa/pathway:hsa01200
+                // link to  gene info https://www.kegg.jp/dbget-bin/www_bget?hsa:10993
+                const  url = `https://cors-anywhere.herokuapp.com/http://rest.kegg.jp/conv/genes/uniprot:${uniprotId}`;
+                fetch(url, {mode: 'cors'})
+                        .then(response => {
+                                // When the page is loaded convert it to text
+                                return response.text();
+                        })
+                        .then(idResponse => {
+                                // the format is somehting like    up:P02763	hsa:5004
+                                const geneId = idResponse.split('\t')[1].split(':')[1].trim();
+                                console.log(geneId + ' * ');
+                                this.keggPathwayFromKeggGene(geneId);
+                        })
+                        .catch(err => {
+                                // this document now refers to our page
+                                // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
+                                console.log('Failed to fetch keggIdtranslation: ', err);
+                                return '';
+                        });
+                return;
+        }
+        private keggUpdate(uniprotId) {
+              this.keggIdFromUniprot(uniprotId);
         }
         private interactionUpdate(geneName, uniprotId) {
+                // TODO: clean handling in no-response case for all of the below
+                // KEGG - pathways
+                this.keggUpdate('P59998');
                 // BioGrid - protein-protein interactions
                 this.biogridUpdate(geneName); // sets the table when done
                 // TRRUST - transcription factors and their targets
                 this.trrustUpdate(geneName, '');
                 // KEGG - pathways
+                // this.keggUpdate('P02763');
         }
   }
