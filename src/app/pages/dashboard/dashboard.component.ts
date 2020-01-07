@@ -24,6 +24,7 @@ export class DashboardComponent implements OnInit {
         private biogridHTMLtable: any = null;
         private trrustHTMLtable: any = null;
         private keggHTMLtable: any = null;
+        private keggPathwayName: any = null;
         constructor() {
         }
 
@@ -275,7 +276,9 @@ export class DashboardComponent implements OnInit {
                         oldTable.parentNode.replaceChild(this.keggHTMLtable, oldTable);
                 }
         }
-         // https://webservice.thebiogrid.org/interactions/?searchNames=true&geneList=MDM2&includeInteractors=true&taxId=9606
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        // https://webservice.thebiogrid.org/interactions/?searchNames=true&geneList=MDM2&includeInteractors=true&taxId=9606
         // &max=10&accesskey=xxxxx
         private processBiogridTable(rawTable, query) {
                 // this does not work,  the object is missing some stuff that  document.createElement takes care of
@@ -301,8 +304,8 @@ export class DashboardComponent implements OnInit {
                         const row: HTMLTableRowElement = this.biogridHTMLtable.insertRow();
                         // row.insertCell(0).innerHTML = this.formatRadioButton(i);
                         // TODO - gene link to entrez, pubmedId to pubmed, OMIM link
-                        row.insertCell(0).innerHTML = geneName;
-                        row.insertCell(1).innerHTML = Array.from(pubmed[geneName].values()).join(', ');
+                        row.insertCell().innerHTML = geneName;
+                        row.insertCell().innerHTML = Array.from(pubmed[geneName].values()).join(', ');
                 }
                 const classList: any = document.getElementById('interactant-table').classList;
                 for (const elClass of classList) {
@@ -342,6 +345,8 @@ export class DashboardComponent implements OnInit {
                                 console.log('Failed to fetch biogrid page: ', err);
                         });
         }
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
         private processTrrustTable(rawTable) {
                 this.trrustHTMLtable = document.createElement('table');
                 for (const line of rawTable.split('\n')) {
@@ -390,11 +395,63 @@ export class DashboardComponent implements OnInit {
                                 return '';
                         });
         }
+
+        ///////////////////////////////////////////////////////
+        private processKeggTable() {
+                this.keggHTMLtable = document.createElement('table');
+                if (this.keggPathwayName === null || this.keggPathwayName.length === 0) {return; }
+                // link to formatted pathway info https://www.kegg.jp/dbget-bin/www_bget?pathway:hsa04144
+                // TODO make links, target blank
+                for (const pthwId in this.keggPathwayName) {
+                        if (!this.keggPathwayName.hasOwnProperty(pthwId)) {continue; }
+                        console.log(pthwId, this.keggPathwayName[pthwId]);
+                        const row: HTMLTableRowElement = this.keggHTMLtable.insertRow();
+                        row.insertCell().innerHTML = `KEGG:${pthwId}`;
+                        row.insertCell().innerHTML = this.keggPathwayName[pthwId];
+                }
+                const classList: any = document.getElementById('interactant-table').classList;
+                for (const elClass of classList) {
+                        this.keggHTMLtable.classList.add(elClass);
+                }
+                this.keggHTMLtable.id = 'interactant-table';
+        }
         // https://cors-anywhere.herokuapp.com/https://www.ebi.ac.uk/intact/interactors/id:P02763*
-        private keggPathwayFromKeggGene(keggGeneId) {
+        private keggPathwayInfo(keggPthwyIdList) {
+                // download pathway info as a flatfile
+                // http://rest.kegg.jp/get/pathway:hsa04144
+                if (keggPthwyIdList.length === 0) {
+                        this.processKeggTable();
+                } else {
+                        const keggPthwyId =  keggPthwyIdList.pop();
+                        const url = `https://cors-anywhere.herokuapp.com/http://rest.kegg.jp/get/pathway:${keggPthwyId}`;
+                        fetch(url, {mode: 'cors'})
+                                .then(response => {
+                                        // When the page is loaded convert it to text
+                                        return response.text();
+                                })
+                                .then(idResponse => {
+                                        // find the name of the pathway
+                                        for (const line of idResponse.split('\n')) {
+                                                if (line.substr(0, 4) === 'NAME') {
+                                                       this.keggPathwayName[keggPthwyId]  =  line
+                                                                        .split('-')[0]
+                                                                        .replace('NAME', '').trim();
+                                                       break;
+                                                }
+                                        }
+                                        this.keggPathwayInfo(keggPthwyIdList);
+                                })
+                                .catch(err => {
+                                        // this document now refers to our page
+                                        // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
+                                        console.log('Failed to fetch keggPathwayId: ', err);
+                                        return '';
+                                });
+
+                }
+        }
+        private keggPathwaysFromKeggGene(keggGeneId) {
                 // get pathways related to gene id:  http://rest.kegg.jp/link/pathway/hsa:10993
-                // get all genes related to pathway id: http://rest.kegg.jp/link/hsa/pathway:hsa01200
-                // link to  gene info https://www.kegg.jp/dbget-bin/www_bget?hsa:10993
                 const  url = `https://cors-anywhere.herokuapp.com/http://rest.kegg.jp/link/pathway/hsa:${keggGeneId}`;
                 fetch(url, {mode: 'cors'})
                         .then(response => {
@@ -404,12 +461,18 @@ export class DashboardComponent implements OnInit {
                         .then(idResponse => {
                                 // the format is somehting like    up:P02763	hsa:5004
                                 // const geneId = idResponse.split('\t')[1].split(':')[1];
-                                console.log(idResponse);
+                                const pthwyIdList = [];
+                                for (const line of idResponse.trim().split('\n')) {
+                                     const pthwId = line.split('\t')[1].split(':')[1].trim();
+                                     pthwyIdList.push(pthwId);
+                                }
+                                this.keggPathwayName = {};
+                                this.keggPathwayInfo(pthwyIdList);
                         })
                         .catch(err => {
                                 // this document now refers to our page
                                 // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
-                                console.log('Failed to fetch keggIdtranslation: ', err);
+                                console.log('Failed to fetch keggPathwayId: ', err);
                                 return '';
                         });
                 return;
@@ -428,13 +491,11 @@ export class DashboardComponent implements OnInit {
                         .then(idResponse => {
                                 // the format is somehting like    up:P02763	hsa:5004
                                 const geneId = idResponse.split('\t')[1].split(':')[1].trim();
-                                console.log(geneId + ' * ');
-                                this.keggPathwayFromKeggGene(geneId);
+                                this.keggPathwaysFromKeggGene(geneId);
                         })
                         .catch(err => {
                                 // this document now refers to our page
                                 // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
-                                console.log('Failed to fetch keggIdtranslation: ', err);
                                 return '';
                         });
                 return;
