@@ -505,13 +505,16 @@ export class DashboardComponent implements OnInit {
         }
         private interactionUpdate(geneName, uniprotId) {
                 // TODO: clean handling in no-response case for all of the below
-                // KEGG - pathways
-                this.keggUpdate('P59998');
+                this.biogridHTMLtable = null;
+                this.trrustHTMLtable = null;
+                this.keggHTMLtable = null;
+                this.keggPathwayName = null;
+
                 // BioGrid - protein-protein interactions
                 this.biogridUpdate(geneName); // sets the table when done
                 // TRRUST - transcription factors and their targets
                 this.trrustUpdate(geneName, '');
                 // KEGG - pathways
-                // this.keggUpdate('P02763');
+                this.keggUpdate('P59998');
         }
   }
