@@ -8,14 +8,20 @@ an academic user, ask them for a teacher/student license. I am a fan.
 
 ## deployment
 
-> ng build --prod
+```
+ng build --prod
+```
 
 Then copy the whole dist folder to the production server, typically in /var/www/html,
 say /var/www/html/exome-dashboard/current.
 
-> chown -R www-data:www-data exome-dashboard
-> mkdir /var/log/apache2/exome-dashboard
-> chown -R www-data:www-data  /var/log/apache2/exome-dashboard
+```
+chown -R www-data:www-data exome-dashboard
+mkdir /var/log/apache2/exome-dashboard
+chown -R www-data:www-data  /var/log/apache2/exome-dashboard
+```
+
+
 (using sudo as appropriate)
 
 
@@ -32,8 +38,10 @@ your server).
 If you are using Apache, the conf file can be found in [tools directory](/tools/exome-dashboard-le-ssl.conf). 
 Place the file in /etc/apache/enabled-sites dir. Enable the site:
 
-> a2ensite exome-dashboard-le-ssl
-> systemctl reload apache2
+```
+a2ensite exome-dashboard-le-ssl
+systemctl reload apache2
+```
 
 
 I am always amazed that these things ever work.
