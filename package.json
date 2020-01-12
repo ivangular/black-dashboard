@@ -1,16 +1,20 @@
 {
-  "name": "black-dashboardr",
+  "name": "exome-dashboard",
   "version": "1.0.0",
-  "description": "Black Dasboard Angular, Coded by Creative Tim, hacked by Ivana",
+  "description": "Exome analyisis dashboard - a training application; Ivana 2020, based on template by Creative TIme",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ng serve"
+    "start": "ng serve",
+    "production": "ng serve --configuration=production"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ivangular/black-dashboard.git"
+    "url": "git+https://github.com/ivangular/exome-dashboard.git"
   },
   "keywords": [
+    "exome analysis",
+    "exome analysis training",
+    "biomedical genetics training",
     "angular dashboard",
     "angular admin",
     "angular bootstrap admin",
@@ -18,40 +22,15 @@
     "angular panel",
     "angular bootstrap template",
     "angular admin template",
-    "angular free",
-    "angular free dashboard",
-    "angular free bootstrap dashboard",
-    "free admin template",
-    "angular admin",
-    "angular admin panel",
-    "angular dashboard",
-    "angular dashboard free",
-    "angular admin free",
-    "angular free admin panel",
-    "angular freebie",
-    "angular freebie dashboard",
-    "angular freebie bootstrap dashboard",
-    "freebie admin template",
-    "angular dashboard freebie",
-    "angular admin freebie",
-    "angular freebie admin panel",
-    "creative tim",
     "web dashboard",
     "bootstrap 4 dashboard",
     "bootstrap 4",
-    "css3 dashboard",
-    "bootstrap 4 admin",
-    "black dashboard bootstrap 4",
-    "frontend",
-    "responsive bootstrap 4 dashboard",
-    "free dashboard",
-    " free admin dashboard",
-    "free bootstrap 4 admin dashboard"
+    "responsive bootstrap 4 dashboard"
   ],
-  "author": "Creative Tim <hello@creative-tim.com> (https://www.creative-tim.com/)",
+  "author": "Ivana (https://dogmaticcentral.org) based on template by Creative Tim (https://www.creative-tim.com/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ivangular/black-dashboard/issues"
+    "url": "https://github.com/ivangular/exome-dashboard/issues"
   },
   "homepage": "",
   "private": false,
