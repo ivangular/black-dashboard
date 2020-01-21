@@ -1,11 +1,9 @@
 import { Routes } from '@angular/router';
 
 import { DashboardComponent } from '../../pages/dashboard/dashboard.component';
-import { TypographyComponent } from '../../pages/typography/typography.component';
-// import { RtlComponent } from "../../pages/rtl/rtl.component";
+import { CasesComponent } from '../../pages/cases/cases.component';
 
 export const AdminLayoutRoutes: Routes = [
-  { path: 'dashboard', component: DashboardComponent },
-   { path: 'typography', component: TypographyComponent },
-  // { path: "rtl", component: RtlComponent }
+   { path: 'cases', component: CasesComponent },
+   { path: 'dashboard/:caseno', component: DashboardComponent }
 ];

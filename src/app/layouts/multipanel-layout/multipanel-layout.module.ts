@@ -6,23 +6,22 @@ import { FormsModule } from '@angular/forms';
 
 import { AdminLayoutRoutes } from './multipanel-layout.routing';
 import { DashboardComponent } from '../../pages/dashboard/dashboard.component';
-import { TypographyComponent } from '../../pages/typography/typography.component';
-// import { RtlComponent } from "../../pages/rtl/rtl.component";
+import { CasesComponent } from '../../pages/cases/cases.component';
+
 
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   imports: [
-    CommonModule,
-    RouterModule.forChild(AdminLayoutRoutes),
-    FormsModule,
-    HttpClientModule,
-    NgbModule,
+      CommonModule,
+      RouterModule.forChild(AdminLayoutRoutes),
+      FormsModule,
+      HttpClientModule,
+      NgbModule
   ],
   declarations: [
-    DashboardComponent,
-    TypographyComponent,
-    // RtlComponent
+      DashboardComponent,
+      CasesComponent
   ]
 })
 export class MultipanelLayoutModule {}

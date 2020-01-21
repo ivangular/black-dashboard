@@ -384,10 +384,10 @@ $general-transition-time:     300ms             !default;
 
 // Fonts
 
-$font-family-base:            'Poppins', sans-serif !default;
-$font-family-alt:             'Poppins', sans-serif !default;
+$font-family-base:            'Roboto Mono', sans-serif !default;
+$font-family-alt:             'Roboto Mono', sans-serif !default;
 
-$font-size-dash:              .875rem !default;
+$font-size-dash:              1.0rem !default;
 
 $font-size-base:              $font-size-dash !default; // Assumes the browser default, typically `16px`
 $font-size-xl:                ($font-size-base * 1.428);

@@ -4,12 +4,13 @@ import { BrowserModule } from '@angular/platform-browser';
 import { Routes, RouterModule } from '@angular/router';
 
 import { MultipanelLayoutComponent } from './layouts/multipanel-layout/multipanel-layout.component';
+import {DashboardComponent} from './pages/dashboard/dashboard.component';
 
 
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'dashboard',
+    redirectTo: 'cases',
     pathMatch: 'full'
   },
   {
@@ -23,10 +24,13 @@ const routes: Routes = [
       }
     ]
   },
+  // use the wildcard path - ** - as a catch-all route to render things like a "Not Found" view
+  // or to redirect the user back to the root of the application.
   {
     path: '**',
-    redirectTo: 'dashboard'
-  }
+    redirectTo: 'cases'
+  },
+
 ];
 
 @NgModule({

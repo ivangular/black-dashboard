@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
-import { ToastrModule } from 'ngx-toastr';
+
 
 import { AppComponent } from './app.component';
 import { MultipanelLayoutComponent } from './layouts/multipanel-layout/multipanel-layout.component';
@@ -23,7 +23,6 @@ import { ComponentsModule } from './components/components.module';
     NgbModule,
     RouterModule,
     AppRoutingModule,
-    ToastrModule.forRoot()
   ],
   declarations: [AppComponent, MultipanelLayoutComponent],
   providers: [],

@@ -7,6 +7,7 @@ declare interface RouteInfo {
   icon: string;
   class: string;
 }
+
 export const ROUTES: RouteInfo[] = [
   {
     path: '/dashboard',
@@ -16,7 +17,7 @@ export const ROUTES: RouteInfo[] = [
     class: ''
   },
   {
-    path: '/icons',
+    path: '/cases',
     title: 'Remove common (family)',
     rtlTitle: 'الرموز',
     icon: 'icon-atom',
@@ -35,7 +36,6 @@ export const ROUTES: RouteInfo[] = [
     icon: 'icon-bell-55',
     class: ''
   },
-
   {
     path: '/user',
     title: 'User Profile',
@@ -51,7 +51,7 @@ export const ROUTES: RouteInfo[] = [
     class: ''
   },
   {
-    path: '/typography',
+    path: '/cases',
     title: 'Typography',
     rtlTitle: 'طباعة',
     icon: 'icon-align-center',
@@ -65,17 +65,17 @@ export const ROUTES: RouteInfo[] = [
   styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent implements OnInit {
-  menuItems: any[];
+    menuItems: any[];
 
-  constructor() {}
+    constructor() {}
 
-  ngOnInit() {
-    this.menuItems = ROUTES.filter(menuItem => menuItem);
-  }
-  isMobileMenu() {
-    if (window.innerWidth > 991) {
-      return false;
+    ngOnInit() {
+      this.menuItems = ROUTES.filter(menuItem => menuItem);
     }
-    return true;
-  }
+    isMobileMenu() {
+      if (window.innerWidth > 991) {
+        return false;
+      }
+      return true;
+    }
 }

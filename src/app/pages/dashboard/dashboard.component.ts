@@ -1,143 +1,86 @@
 import {Component, OnInit} from '@angular/core';
-import Chart from 'chart.js';
+import { ActivatedRoute} from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+
 // json import
 // https://medium.com/@baerree/angular-7-import-json-14f8bba534af
 // not sure why I need to ignore the linter here, because the import seems to be working ok
 // @ts-ignore
 import communication from './communication.json';
 
+
+enum columns  {chrom, pos, gt, freqs, annotation, gt_mom, gt_dad, flags}
+
 @Component({
         selector: 'app-dashboard',
         templateUrl: 'dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
-        public canvas: any;
-        public ctx;
+        constructor(
+            private route: ActivatedRoute,
+            private http: HttpClient
+         ) {}
         public variant: any;
         public contents: string;
-        public contentsEn: string;
-        public contentsHr: string;
-        public clickedEn = false;
-        public clickedHr = true;
+        public contentsEn = '';
+        public contentsHr = '';
+        public clickedEn = true;
+        public clickedHr = false;
         private variantDataIds: any;
         private variantProvenance: any;
+        private uniprot: any = null;
         private biogridHTMLtable: any = null;
         private trrustHTMLtable: any = null;
         private keggHTMLtable: any = null;
         private keggPathwayName: any = null;
-        constructor() {
-        }
+        private annotExpansion =  {e: 'exonic', intr: 'intronic', s: 'splice', d: 'downstream', u: 'upstream'};
 
         ngOnInit() {
-
-                const gradientChartOptionsConfigurationWithTooltipRed: any = {
-                        maintainAspectRatio: false,
-                        legend: {
-                                display: false
-                        },
-
-                        tooltips: {
-                                backgroundColor: '#f5f5f5',
-                                titleFontColor: '#333',
-                                bodyFontColor: '#666',
-                                bodySpacing: 4,
-                                xPadding: 12,
-                                mode: 'nearest',
-                                intersect: 0,
-                                position: 'nearest'
-                        },
-                        responsive: true,
-                        scales: {
-                                yAxes: [{
-                                        barPercentage: 1.6,
-                                        gridLines: {
-                                                drawBorder: false,
-                                                color: 'rgba(29,140,248,0.0)',
-                                                zeroLineColor: 'transparent',
-                                        },
-                                        ticks: {
-                                                suggestedMin: 60,
-                                                suggestedMax: 125,
-                                                padding: 20,
-                                                fontColor: '#9a9a9a'
-                                        }
-                                }],
-
-                                xAxes: [{
-                                        barPercentage: 1.6,
-                                        gridLines: {
-                                                drawBorder: false,
-                                                color: 'rgba(233,32,16,0.1)',
-                                                zeroLineColor: 'transparent',
-                                        },
-                                        ticks: {
-                                                padding: 20,
-                                                fontColor: '#9a9a9a'
-                                        }
-                                }]
-                        }
-                };
-                this.canvas = document.getElementById('chartLineRed');
-                this.ctx = this.canvas.getContext('2d');
-
-                const gradientStroke = this.ctx.createLinearGradient(0, 230, 0, 50);
-
-                gradientStroke.addColorStop(1, 'rgba(233,32,16,0.2)');
-                gradientStroke.addColorStop(0.4, 'rgba(233,32,16,0.0)');
-                gradientStroke.addColorStop(0, 'rgba(233,32,16,0)'); // red colors
-
-                const data = {
-                        labels: ['JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
-                        datasets: [{
-                                label: 'Data',
-                                fill: true,
-                                backgroundColor: gradientStroke,
-                                borderColor: '#ec250d',
-                                borderWidth: 2,
-                                borderDash: [],
-                                borderDashOffset: 0.0,
-                                pointBackgroundColor: '#ec250d',
-                                pointBorderColor: 'rgba(255,255,255,0)',
-                                pointHoverBackgroundColor: '#ec250d',
-                                pointBorderWidth: 20,
-                                pointHoverRadius: 4,
-                                pointHoverBorderWidth: 15,
-                                pointRadius: 4,
-                                data: [80, 100, 70, 80, 120, 80],
-                        }]
-                };
-
-                const myChart = new Chart(this.ctx, {
-                        type: 'line',
-                        data,
-                        options: gradientChartOptionsConfigurationWithTooltipRed
-                });
-
-                /////////////////////////////////////////////////
                 // case description here
-                this.contentsEn = '‘Curiouser and curiouser!’ cried Alice (she was so much surprised, that for the moment she quite ' +
-                        // tslint:disable-next-line:max-line-length
-                        'forgot how to speak good English); ‘now I’m opening out like the largest telescope that ever was! Good-bye, feet!’ ' +
-                        '(for when she looked down at her feet, they seemed to be almost out of sight, they were getting so far off).';
-                this.contentsHr = '  - ¡Curiorífico y curiorífico! - exclamó Alicia (estaba tan sorprendida, que por un momento se ' +
-                        // tslint:disable-next-line:max-line-length
-                        'olvidó hasta de hablar correctamente)- . ¡Ahora me estoy estirando como el telescopio más largo que haya existido ' +
-                        'jamás! ¡Adiós, pies! - gritó, porque cuando miró hacia abajo vio que sus pies quedaban ya tan lejos que parecía' +
-                        ' fuera a perderlos de vista- . ';
+                this.contentsEn = '';
+                this.contentsHr = '';
                 // variants: we have threr; the first entry refers to proband, the second to mother, and the third to father
                 this.variantProvenance = ['var-proband', 'var-mother', 'var-father'];
                 this.variantDataIds = ['vardat-0', 'vardat-1', 'vardat-2', 'vardat-3'];
-                this.variant = [
-                        [['-',  '-',  '-', '-'], ['-',  '-',  '-', '-'], ['-',  '-',  '-', '-']],
-                        [[ 'A',  'T', '-', '200'], ['A',  'A',  '-', '175'], ['T',  'T',  '-', '215']],
-                        [[ 'G',  'G', '-', '155'], ['G',  'C',  '-', '100'], ['G',  'C',  '-', '100']]
-                ];
-                this.loadVariantTable();
-
+                this.variant = [];
+                // note that the path to here is defined in multipanel-layout.routing.ts
+                this.route.params.subscribe(params => {
+                        const caseno = params.caseno;
+                        this.http
+                                .get(`assets/case_descriptions/case${caseno}.en.txt`, {responseType: 'text'})
+                                .subscribe(data => {
+                                        this.contentsEn = data;
+                                        this.contents = this.contentsEn;
+                                        this.descriptionUpdate();
+                                });
+                        this.http
+                                .get(`assets/case_descriptions/case${caseno}.hr.txt`, {responseType: 'text'})
+                                .subscribe(data => {
+                                        this.contentsHr = data;
+                                });
+                        this.http
+                                .get(`assets/case_vcfs/case${caseno}.tsv`, {responseType: 'text'})
+                                .subscribe(data => {
+                                        this.variant = [];
+                                        for (const line of data.split('\n')) {
+                                             this.variant.push(line.split('\t'));
+                                        }
+                                        this.loadVariantTable();
+                                });
+                        this.http
+                                .get(`assets/case_id_resolution_tables/case${caseno}.ids.tsv`, {responseType: 'text'})
+                                .subscribe(data => {
+                                        this.uniprot = {};
+                                        for (const line of data.split('\n')) {
+                                             const field = line.split('\t');
+                                             this.uniprot[field[0]] = field[1];
+                                        }
+                                });
+                });
         }
 
         private onVariantClickHandler(e) {
-                 if (e.target !== e.currentTarget) {
+                if (e.target !== e.currentTarget) {
                         const parentRow    =   e.target.closest('tr');
                         for ( const child of parentRow.parentElement.children) {
                                 child.classList.remove('tr-clicked');
@@ -146,23 +89,43 @@ export class DashboardComponent implements OnInit {
                         const clickedItem  =  parentRow.id;
                         const variantId = clickedItem.split('-')[1];
                         this.variantUpdate(variantId);
-                        this.geneInfoUpdate('P04637');
-                        this.interactionUpdate('TP53', 'P04637');
-                 }
-                 e.stopPropagation();
+                        const geneSymbol = this.variant[variantId][columns.annotation].split(':')[0];
+                        let uniprotId = 'unk';
+                        console.log(geneSymbol, geneSymbol in this.uniprot);
+                        if (geneSymbol in this.uniprot) {
+                                uniprotId = this.uniprot[geneSymbol];
+                        }
+                        this.geneInfoUpdate(geneSymbol, uniprotId);
+                        this.interactionUpdate(geneSymbol, uniprotId);
+                }
+                e.stopPropagation();
         }
 
+
         private loadVariantTable() {
+                document.getElementById('variant-count').innerText = `number: ${this.variant.length}`;
                 const table: HTMLTableElement = document.getElementById('variant-table') as HTMLTableElement;
-                const probandIndex = 0;
                 for (let i = 0; i < this.variant.length; i++) {
+                // for (let i = 0; i < 50; i++) {
                         // Index (i here) is required in Firefox and Opera, optional in IE, Chrome and Safari.
                         const row: HTMLTableRowElement = table.insertRow(i);
                         row.setAttribute('id', `var-${i}`);
                         row.setAttribute('class', 'tr-clickable');
-                         // row.insertCell(0).innerHTML = this.formatRadioButton(i);
-                        row.insertCell(0).innerHTML = this.variant[i][probandIndex][1];
-                }
+                        // row.insertCell(0).innerHTML = this.formatRadioButton(i);
+                        const annotFields = this.variant[i][columns.annotation].split(':');
+                        let location = '';
+                        if (annotFields.length > 2 ) {
+                                if (annotFields[2] in this.annotExpansion) {
+                                        location = this.annotExpansion[annotFields[2]];
+                                } else {
+                                        location = annotFields[2];
+                                }
+                        }
+                        row.insertCell(0).innerHTML = this.variant[i][columns.chrom];
+                        row.insertCell(1).innerHTML = annotFields[0];
+                        row.insertCell(2).innerHTML = location;
+                        row.insertCell(3).innerHTML = this.variant[i][columns.gt];
+                 }
                 // count on event propagation to get to table, whichever row was clicked
                 // (I do not want 1000 event listeners on the page)
                 table.addEventListener('click',
@@ -184,6 +147,7 @@ export class DashboardComponent implements OnInit {
         }
 
         private variantUpdate(variantId) {
+                // I AM HERE <-------
                 // loop over sources/provenance: proband, mother, father
                 for (let sourceIndex = 0; sourceIndex < this.variantProvenance.length; sourceIndex++) {
                      const variantDetails = document.getElementById(this.variantProvenance[sourceIndex]);
@@ -191,7 +155,16 @@ export class DashboardComponent implements OnInit {
                 }
         }
 
-        private geneInfoUpdate(uniprotId) {
+        private geneInfoUpdate(geneSymbol, uniprotId) {
+                document.getElementById('gene-summary').innerHTML = '';
+                document.getElementById('gene-diseases').innerHTML = '';
+                document.getElementById('gene-summary-title').innerText = 'geneSymbol';
+                document.getElementById('gene-diseases-title').innerText = 'geneSymbol';
+                if (uniprotId === 'unk') {
+                       document.getElementById('gene-summary').innerText = '(not available)';
+                       document.getElementById('gene-diseases').innerText = '(not available)';
+                       return;
+                }
                 // CORS compliance problem
                 // note this: http://lindenb.github.io/pages/cors/index.html (bioinf services supporting CORS)
                 // const url = `https://www.ncbi.nlm.nih.gov/gene/${geneId}`;
@@ -241,7 +214,10 @@ export class DashboardComponent implements OnInit {
                                     geneSummaryHtml += '<h5 class="card-subtitle">EXPRESSION</h5>' + geneExpression;
                                 }
                                 // this document now refers to our page
+                                document.getElementById('gene-summary-title').innerText = geneSymbol;
                                 document.getElementById('gene-summary').innerHTML = geneSummaryHtml;
+
+                                document.getElementById('gene-diseases-title').innerText = geneSymbol;
                                 if (disease.length > 0) {
                                     document.getElementById('gene-diseases').innerHTML = disease;
                                 } else {
@@ -280,6 +256,16 @@ export class DashboardComponent implements OnInit {
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         // https://webservice.thebiogrid.org/interactions/?searchNames=true&geneList=MDM2&includeInteractors=true&taxId=9606
         // &max=10&accesskey=xxxxx
+        private constructHtmlLinks(pubmedIds) {
+                let pubmedHtml = '';
+                for (const pubmedId of pubmedIds) {
+                        if (pubmedHtml.length > 0) {
+                               pubmedHtml += ', ';
+                        }
+                        pubmedHtml += `<a href="https://pubmed.ncbi.nlm.nih.gov/${pubmedId}" target="_blank">PubMed</a>`;
+                }
+                return pubmedHtml;
+        }
         private processBiogridTable(rawTable, query) {
                 // this does not work,  the object is missing some stuff that  document.createElement takes care of
                 // this.biogridHTMLtable = new HTMLTableElement();
@@ -305,7 +291,7 @@ export class DashboardComponent implements OnInit {
                         // row.insertCell(0).innerHTML = this.formatRadioButton(i);
                         // TODO - gene link to entrez, pubmedId to pubmed, OMIM link
                         row.insertCell().innerHTML = geneName;
-                        row.insertCell().innerHTML = Array.from(pubmed[geneName].values()).join(', ');
+                        row.insertCell().innerHTML = this.constructHtmlLinks(pubmed[geneName].values());
                 }
                 const classList: any = document.getElementById('interactant-table').classList;
                 for (const elClass of classList) {
@@ -365,6 +351,7 @@ export class DashboardComponent implements OnInit {
                 }
                 this.trrustHTMLtable.id = 'interactant-table';
         }
+        // TODO: revive trrust
         private trrustUpdate(geneName, pieceOne) {
                 // TP63 targets
                 // "url":"https://www.grnpedia.org/trrust/export_tsv.php?tabletype=TF&gene=TP63&species=human"
@@ -376,6 +363,7 @@ export class DashboardComponent implements OnInit {
                         .then(async response => {
                                 // When the page is loaded convert it to text
                                 const  retText: string = await response.text();
+                                // TODO: do something if no response
                                 if (pieceOne === '') {
                                     this.trrustUpdate(geneName, retText);
                                 }
@@ -396,7 +384,7 @@ export class DashboardComponent implements OnInit {
                         });
         }
 
-        ///////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////
         private processKeggTable() {
                 this.keggHTMLtable = document.createElement('table');
                 if (this.keggPathwayName === null || this.keggPathwayName.length === 0) {return; }
@@ -406,7 +394,8 @@ export class DashboardComponent implements OnInit {
                         if (!this.keggPathwayName.hasOwnProperty(pthwId)) {continue; }
                         console.log(pthwId, this.keggPathwayName[pthwId]);
                         const row: HTMLTableRowElement = this.keggHTMLtable.insertRow();
-                        row.insertCell().innerHTML = `KEGG:${pthwId}`;
+                        // tslint:disable-next-line:max-line-length
+                        row.insertCell().innerHTML = `<a href="https://www.genome.jp/dbget-bin/www_bget?${pthwId}" target="_blank">KEGG</a>`;
                         row.insertCell().innerHTML = this.keggPathwayName[pthwId];
                 }
                 const classList: any = document.getElementById('interactant-table').classList;
@@ -503,7 +492,8 @@ export class DashboardComponent implements OnInit {
         private keggUpdate(uniprotId) {
               this.keggIdFromUniprot(uniprotId);
         }
-        private interactionUpdate(geneName, uniprotId) {
+        private interactionUpdate(geneSymbol, uniprotId) {
+                document.getElementById('gene-interaction-title').innerText = geneSymbol;
                 // TODO: clean handling in no-response case for all of the below
                 this.biogridHTMLtable = null;
                 this.trrustHTMLtable = null;
@@ -511,10 +501,12 @@ export class DashboardComponent implements OnInit {
                 this.keggPathwayName = null;
 
                 // BioGrid - protein-protein interactions
-                this.biogridUpdate(geneName); // sets the table when done
+                this.biogridUpdate(geneSymbol); // sets the table when done
                 // TRRUST - transcription factors and their targets
-                this.trrustUpdate(geneName, '');
+                // this.trrustUpdate(geneSymbol, '');
                 // KEGG - pathways
-                this.keggUpdate('P59998');
+                if (uniprotId !== 'unk') {
+                        this.keggUpdate(uniprotId);
+                }
         }
   }
