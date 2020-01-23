@@ -1,62 +1,53 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
+import { Subscription } from 'rxjs';
+import { MessageService } from '../../_services';
 
 declare interface RouteInfo {
   path: string;
   title: string;
-  rtlTitle: string;
-  icon: string;
+  filter: number;
   class: string;
 }
-
+// TODO I am declaring filters both here andin dashboard component.ts
 export const ROUTES: RouteInfo[] = [
-  {
-    path: '/dashboard',
-    title: 'Remove common (population)',
-    rtlTitle: 'لوحة القيادة',
-    icon: 'icon-chart-pie-36',
-    class: ''
-  },
-  {
-    path: '/cases',
-    title: 'Remove common (family)',
-    rtlTitle: 'الرموز',
-    icon: 'icon-atom',
-    class: ''
-  },
-  {
-    path: '/maps',
-    title: 'Expression location',
-    rtlTitle: 'خرائط',
-    icon: 'icon-pin',
-    class: '' },
-  {
-    path: '/notifications',
-    title: 'Notifications',
-    rtlTitle: 'إخطارات',
-    icon: 'icon-bell-55',
-    class: ''
-  },
-  {
-    path: '/user',
-    title: 'User Profile',
-    rtlTitle: 'ملف تعريفي للمستخدم',
-    icon: 'icon-single-02',
-    class: ''
-  },
-  {
-    path: '/tables',
-    title: 'Table List',
-    rtlTitle: 'قائمة الجدول',
-    icon: 'icon-puzzle-10',
-    class: ''
-  },
-  {
-    path: '/cases',
-    title: 'Typography',
-    rtlTitle: 'طباعة',
-    icon: 'icon-align-center',
-    class: ''
-  }
+        {
+                path: '/dashboard',
+                title: 'Remove common (in general population)',
+                filter: 2, // COMMON
+                class: 'filter'
+        },
+        {
+                path: '/dashboard',
+                title: 'Remove silent ',
+                filter: 8, // SILENT
+                class: 'filter'
+        },
+        {
+                path: '/dashboard',
+                title: 'Remove parent\nhomozygote ',
+                filter: 32, // PARENT HOMOZYGOTE
+                class: 'filter'
+        },
+
+        {
+                path: '/dashboard',
+                title: 'Exonic only ',
+                filter:  4, // EXONIC
+                class: 'filter'
+        },
+        {
+                path: '/dashboard',
+                title: 'Homozygote only ',
+                filter: 1, // HOMOZYGOTE
+                class: 'filter'
+        },
+        {
+                path: '/dashboard',
+                title: 'De novo only ',
+                filter: 16, // DE_NOVO
+                class: 'filter'
+        },
+
 ];
 
 @Component({
@@ -65,17 +56,56 @@ export const ROUTES: RouteInfo[] = [
   styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent implements OnInit {
-    menuItems: any[];
 
-    constructor() {}
+        subscription: Subscription;
+        menuItems: any[];
+        filterOn: any;
 
-    ngOnInit() {
-      this.menuItems = ROUTES.filter(menuItem => menuItem);
-    }
-    isMobileMenu() {
-      if (window.innerWidth > 991) {
-        return false;
-      }
-      return true;
-    }
-}
+        constructor(private messageService: MessageService) {
+
+                // subscribe to home component messages
+                this.subscription = this.messageService.getMessage().subscribe(message => {
+                        if (message) {
+                                const field = message.text.split(' ');
+                                if (field[0] === 'flist') {
+                                         if (field[1] === 'reset') {
+                                                this.resetFilters();
+                                        } else if (field[1] === 'hide') {
+                                                 document.getElementById('filter-list').style.display = 'none';
+                                        }  else if (field[1] === 'show') {
+                                                document.getElementById('filter-list').style.display = 'block';
+                                        }
+                                }
+                        }
+                });
+        }
+
+        sendMessage(filter: number): void {
+                // send message to subscribers via observable subject
+                this.messageService.sendMessage(`filter ${filter} ${this.filterOn[filter]}`);
+        }
+
+        clearMessages(): void {
+                // clear messages
+                this.messageService.clearMessages();
+        }
+
+
+        ngOnInit() {
+                this.menuItems = ROUTES;
+                this.resetFilters();
+        }
+        private resetFilters() {
+                this.filterOn = {};
+                for (const menuItem of this.menuItems) {
+                        this.filterOn[menuItem.filter] = false;
+                }
+         }
+
+        toggleFilter(filter) {
+                if (filter in this.filterOn) {
+                        this.filterOn[filter] = ! this.filterOn[filter];
+                }
+        }
+
+ }

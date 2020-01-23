@@ -4,17 +4,15 @@
   </a>
 </div>
 
-<div class="sidebar-wrapper">
-  <ul class="nav">
-    <li
-      routerLinkActive="active"
-      *ngFor="let menuItem of menuItems"
-      class="{{ menuItem.class }} nav-item"
-    >
-      <a [routerLink]="[menuItem.path]">
-        <i class="tim-icons  {{ menuItem.icon }}"></i>
-        <p>{{ menuItem.title }}</p>
-      </a>
-    </li>
-  </ul>
+<div class="sidebar-wrapper" id="filter-list">
+    <div  class="filter-title"> FILTERS </div>
+    <div *ngFor="let menuItem of menuItems" class="{{ menuItem.class }} ">
+
+      <label (click)="toggleFilter(menuItem.filter);sendMessage(menuItem.filter)" [ngClass]="{'filter-clicked':filterOn[menuItem.filter]}">
+      <!--label (click)="toggleFilter(menuItem.filter);sendMessage(menuItem.filter)" [ngClass]="{'filter-clicked':true} "-->
+            <p>{{ menuItem.title }}</p>
+      </label>
+
+    </div>
+
 </div>

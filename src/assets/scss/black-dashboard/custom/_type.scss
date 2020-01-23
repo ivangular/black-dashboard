@@ -30,13 +30,17 @@ h1,h2,h3,h4,h5,h6{
 }
 
 a{
-    color: $primary-states;
+    color: $info-states;
     font-weight: $font-weight-light;
-    &:hover,
-    &:focus{
-        color: $primary;
+    &:hover{
+        color: $black-states;
     }
 }
+a:visited {
+    color: $info-states;
+}
+
+
 h1, .h1 {
     line-height: 1.05;
     margin-bottom: $margin-base-vertical * 2;

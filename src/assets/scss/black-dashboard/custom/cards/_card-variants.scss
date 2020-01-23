@@ -1,23 +1,23 @@
 .card-variants {
 
-  max-height: 1400px;
+  max-height: 1480px;
 
 
   .table-full-width {
-    max-height: 1380px;
-    position: relative;
+      max-height: 1360px;
+      position: relative;
   }
 
   .card-header {
-    .title {
-      margin-right: 20px;
-      font-weight: $font-weight-normal;
-    }
+      .title {
+        margin-right: 20px;
+        font-weight: $font-weight-normal;
+      }
 
-    .dropdown {
-      float: right;
-      color: darken($white, 20%);
-    }
+      .dropdown {
+        float: right;
+        color: darken($white, 20%);
+      }
   }
 
   .card-body {

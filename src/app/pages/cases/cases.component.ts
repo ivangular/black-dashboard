@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MessageService } from '../../_services';
 
 @Component({
   selector: 'app-typography',
@@ -6,7 +7,13 @@ import { Component, OnInit } from '@angular/core';
 })
 
 export class CasesComponent implements OnInit {
-  constructor() {}
+  constructor(private messageService: MessageService) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+     console.log('sending message');
+     this.messageService.sendMessage('flist hide');
+
+  }
+
+
 }

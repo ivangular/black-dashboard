@@ -25,14 +25,6 @@
         width: 35px;
     }
 }
-.sidebar, .off-canvas-sidebar{
-  &, &[data="red"]{
-    @include linear-gradient($sidebar-dark, $sidebar-light);
-  }
-  &[data="primary"]{
-    @include linear-gradient($primary-states, $primary);
-  }
-}
 @media screen and (max-width: 991px){
   .main-panel {
       .content {

@@ -1,6 +1,8 @@
 import {Component, OnInit} from '@angular/core';
 import { ActivatedRoute} from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
+import { MessageService } from '../../_services';
 
 // json import
 // https://medium.com/@baerree/angular-7-import-json-14f8bba534af
@@ -8,18 +10,30 @@ import { HttpClient } from '@angular/common/http';
 // @ts-ignore
 import communication from './communication.json';
 
-
-enum columns  {chrom, pos, gt, freqs, annotation, gt_mom, gt_dad, flags}
-
+enum columns  {chrom, pos, gt, freqs, annotation, gt_mom, gt_dad, flags, length}
 @Component({
         selector: 'app-dashboard',
         templateUrl: 'dashboard.component.html'
 })
 export class DashboardComponent implements OnInit {
         constructor(
-            private route: ActivatedRoute,
-            private http: HttpClient
-         ) {}
+                private route: ActivatedRoute,
+                private http: HttpClient,
+                private messageService: MessageService
+        ) {
+                // subscribe to home component messages
+                this.subscription = this.messageService.getMessage().subscribe(message => {
+                        if (message) {
+                                const field = message.text.split(' ');
+                                if (field[0] === 'filter') {
+                                        this.updateFilter(field[1], field[2] === 'true');
+                                        this.showVariantTable(); // this will show the re-filtered data
+                                 }
+                        }
+                });
+        }
+        subscription: Subscription;
+        private caseno: number;
         public variant: any;
         public contents: string;
         public contentsEn = '';
@@ -29,23 +43,55 @@ export class DashboardComponent implements OnInit {
         private variantDataIds: any;
         private variantProvenance: any;
         private uniprot: any = null;
+        private omim: any = null;
         private biogridHTMLtable: any = null;
         private trrustHTMLtable: any = null;
         private keggHTMLtable: any = null;
         private keggPathwayName: any = null;
-        private annotExpansion =  {e: 'exonic', intr: 'intronic', s: 'splice', d: 'downstream', u: 'upstream'};
+        private annotExpansion =  {e: 'exonic', intr: 'intronic', s: 'splice',
+                d: 'downstream', u: 'upstream', r: 'RNA', f: '(ann. missing)'};
+        private filterPositive: number;
+        private filterNegative: number;
+        private HOMOZYGOTE   =  1;
+        private COMMON       =  2;
+        private EXONIC       =  4;
+        private SILENT       =  8;
+        private DE_NOVO      = 16;
+        private PARENT_HOMOZYGOTE = 32;
+        // tslint:disable-next-line:no-bitwise
+        private positiveFlags = this.EXONIC |  this.HOMOZYGOTE | this.DE_NOVO;
+        // tslint:disable-next-line:no-bitwise
+        private negativeFlags = this.COMMON | this.SILENT | this.PARENT_HOMOZYGOTE;
+        // https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr1:47219779-47219787
+
+        private static ucscLink(chrom, pos) {
+                let url = 'https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr';
+                // + insures this is interpreted as a number, and not as a string
+                url += `${chrom}:${+pos - 4}-${+pos + 4}`;
+                let link = `<a href="${url}" target="_blank">`;
+                link += `GRCh38:chr${chrom}:${pos}</a>`;
+                return link;
+        }
 
         ngOnInit() {
+                console.log('sending message');
+                this.messageService.sendMessage('flist reset');
+                this.messageService.sendMessage('flist show');
+                // variant filtering
+                this.filterPositive = 0;
+                this.filterNegative = 0;
                 // case description here
+                this.caseno = null;
                 this.contentsEn = '';
                 this.contentsHr = '';
-                // variants: we have threr; the first entry refers to proband, the second to mother, and the third to father
-                this.variantProvenance = ['var-proband', 'var-mother', 'var-father'];
-                this.variantDataIds = ['vardat-0', 'vardat-1', 'vardat-2', 'vardat-3'];
+                // variants details table
+                this.variantProvenance = ['var-proband', 'var-mother', 'var-father']; // rows
+                this.variantDataIds = ['vardat-0', 'vardat-1', 'vardat-2', 'vardat-3']; // columns
                 this.variant = [];
                 // note that the path to here is defined in multipanel-layout.routing.ts
                 this.route.params.subscribe(params => {
                         const caseno = params.caseno;
+                        this.caseno = caseno;
                         this.http
                                 .get(`assets/case_descriptions/case${caseno}.en.txt`, {responseType: 'text'})
                                 .subscribe(data => {
@@ -61,22 +107,75 @@ export class DashboardComponent implements OnInit {
                         this.http
                                 .get(`assets/case_vcfs/case${caseno}.tsv`, {responseType: 'text'})
                                 .subscribe(data => {
-                                        this.variant = [];
-                                        for (const line of data.split('\n')) {
-                                             this.variant.push(line.split('\t'));
-                                        }
-                                        this.loadVariantTable();
+                                       this.loadVariantTable(data);
+                                       this.showVariantTable();
                                 });
                         this.http
                                 .get(`assets/case_id_resolution_tables/case${caseno}.ids.tsv`, {responseType: 'text'})
                                 .subscribe(data => {
                                         this.uniprot = {};
+                                        this.omim = {};
                                         for (const line of data.split('\n')) {
                                              const field = line.split('\t');
                                              this.uniprot[field[0]] = field[1];
+                                             this.omim[field[0]] = field[2];
                                         }
                                 });
                 });
+        }
+
+        private loadVariantTable(data) {
+                this.variant = [];
+                for (const line of data.split('\n')) {
+                        const fields = line.split('\t');
+                        if (fields.length < columns.length) {continue; }
+                        this.variant.push(fields);
+                }
+        }
+
+        private showVariantTable() {
+                const table: HTMLTableElement = document.getElementById('variant-table') as HTMLTableElement;
+                // this is supposed to be much faster than table.innerHTML = '';
+                // https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
+                while (table.firstChild) { table.removeChild(table.firstChild); }
+                console.log(' >>>> ', this.variant.length);
+                let lengthFiltered = 0;
+                for (let i = 0; i < this.variant.length; i++) {
+                        // show only variants that g o through the filter
+                        //  tslint:disable-next-line:no-bitwise
+                        const positiveReq = (this.variant[i][columns.flags] & this.filterPositive) === this.filterPositive;
+                        // tslint:disable-next-line:no-bitwise
+                        const negativeReq = (~this.variant[i][columns.flags] & this.filterNegative) === this.filterNegative;
+                        if (!positiveReq || !negativeReq) {continue; }
+
+                        const row: HTMLTableRowElement = table.insertRow();
+                        row.setAttribute('id', `var-${i}`);
+                        row.setAttribute('class', 'tr-clickable');
+                        const [location, strand, gene, protein1, protein2] = this.parseAnnotation(this.variant[i][columns.annotation]);
+                        row.insertCell(0).innerHTML = this.variant[i][columns.chrom];
+                        row.insertCell(1).innerHTML = gene;
+                        row.insertCell(2).innerHTML = location;
+                        let varDisplay: string =  this.variant[i][columns.gt];
+                        if ( varDisplay.length > 15) {varDisplay = varDisplay.substring(0, 15) + ' ...'; }
+                        row.insertCell(3).innerHTML = varDisplay;
+                        lengthFiltered += 1;
+                 }
+                // count on event propagation to get to table, whichever row was clicked
+                // (I do not want 1000 event listeners on the page)
+                table.addEventListener('click',  this.onVariantClickHandler.bind(this), false);
+                document.getElementById('variant-count').innerText = `total: ${lengthFiltered}`;
+       }
+
+        private updateFilter(filter: number, on: boolean) {
+                console.log(`updating filter ${filter} to ${on}`);
+                // tslint:disable-next-line:no-bitwise
+                if (filter & this.positiveFlags)  {
+                        // tslint:disable-next-line:no-bitwise
+                        this.filterPositive ^= filter;
+                } else {
+                        // tslint:disable-next-line:no-bitwise
+                        this.filterNegative ^= filter;
+                }
         }
 
         private onVariantClickHandler(e) {
@@ -88,10 +187,9 @@ export class DashboardComponent implements OnInit {
                         parentRow.classList.add('tr-clicked');
                         const clickedItem  =  parentRow.id;
                         const variantId = clickedItem.split('-')[1];
-                        this.variantUpdate(variantId);
+                        this.variantDetailUpdate(variantId);
                         const geneSymbol = this.variant[variantId][columns.annotation].split(':')[0];
                         let uniprotId = 'unk';
-                        console.log(geneSymbol, geneSymbol in this.uniprot);
                         if (geneSymbol in this.uniprot) {
                                 uniprotId = this.uniprot[geneSymbol];
                         }
@@ -101,19 +199,16 @@ export class DashboardComponent implements OnInit {
                 e.stopPropagation();
         }
 
-
-        private loadVariantTable() {
-                document.getElementById('variant-count').innerText = `number: ${this.variant.length}`;
-                const table: HTMLTableElement = document.getElementById('variant-table') as HTMLTableElement;
-                for (let i = 0; i < this.variant.length; i++) {
-                // for (let i = 0; i < 50; i++) {
-                        // Index (i here) is required in Firefox and Opera, optional in IE, Chrome and Safari.
-                        const row: HTMLTableRowElement = table.insertRow(i);
-                        row.setAttribute('id', `var-${i}`);
-                        row.setAttribute('class', 'tr-clickable');
-                        // row.insertCell(0).innerHTML = this.formatRadioButton(i);
-                        const annotFields = this.variant[i][columns.annotation].split(':');
-                        let location = '';
+        private parseAnnotation(annotation) {
+                let location = '';
+                let strand =  '';
+                let gene = '';
+                let protein1 = ''; // allele1 effect on proteins
+                let protein2 = ''; // allele2 effect on proteins
+                if (annotation != null) {
+                        const annotFields = annotation.split(':');
+                        gene =  annotFields[0];
+                        if (annotFields.length > 1 ) {strand = annotFields[1]; }
                         if (annotFields.length > 2 ) {
                                 if (annotFields[2] in this.annotExpansion) {
                                         location = this.annotExpansion[annotFields[2]];
@@ -121,16 +216,12 @@ export class DashboardComponent implements OnInit {
                                         location = annotFields[2];
                                 }
                         }
-                        row.insertCell(0).innerHTML = this.variant[i][columns.chrom];
-                        row.insertCell(1).innerHTML = annotFields[0];
-                        row.insertCell(2).innerHTML = location;
-                        row.insertCell(3).innerHTML = this.variant[i][columns.gt];
-                 }
-                // count on event propagation to get to table, whichever row was clicked
-                // (I do not want 1000 event listeners on the page)
-                table.addEventListener('click',
-                        this.onVariantClickHandler.bind(this),
-                        false);
+                        if (annotFields.length > 3) {
+                                [protein1, protein2] = annotFields[3].split('|');
+                                if (protein2 == null) {protein2 = ''; }
+                        }
+                }
+                return [location, strand, gene, protein1, protein2];
         }
 
         public descriptionUpdate() {
@@ -139,20 +230,51 @@ export class DashboardComponent implements OnInit {
                 // this.myChartData.update();
         }
 
-        private fillVariantDetails(element, variantId, sourceIndex) {
-                for (let i = 0; i < this.variantDataIds.length; i++) {
-                       element.getElementsByClassName(this.variantDataIds[i])[0].textContent =
-                                this.variant[variantId][sourceIndex][i];
+        private fillVariantDetailTable( variantId) {
+                const freqHumanReadable = {0: 'common', 1: '1:10', 2: '1:100', 3: '1:1K', 4: '1:10K',
+                                                5: '1:100K', 6: '1:1M', 7: '0', 8: '0', 9: '0'};
+                // this.variant[variantId] is
+                // chrom pos alleles freq annotation mom pop
+                let alleles =  this.variant[variantId][2].split('|');
+                document.getElementById('p-allele1').textContent = alleles[0];
+                document.getElementById('p-allele2').textContent = alleles[1];
+                const freqs  =  this.variant[variantId][3].split('|');
+                document.getElementById('p-freq1').textContent = freqHumanReadable[freqs[0]];
+                document.getElementById('p-freq2').textContent = freqHumanReadable[freqs[1]];
+
+                alleles =  this.variant[variantId][5].split('|');
+                document.getElementById('m-allele1').textContent = alleles[0];
+                document.getElementById('m-allele2').textContent = alleles[1];
+
+                alleles =  this.variant[variantId][6].split('|');
+                document.getElementById('f-allele1').textContent = alleles[0];
+                document.getElementById('f-allele2').textContent = alleles[1];
+        }
+
+        private fillVariantDetailPosition( variantId) {
+                const chrom =  this.variant[variantId][columns.chrom];
+                // + insures this is interpreted as a number, and not as a string
+                const pos =  +this.variant[variantId][columns.pos];
+                document.getElementById('position').innerHTML = DashboardComponent.ucscLink(chrom, pos);
+
+                const  [location, strand, gene, protein1, protein2] = this.parseAnnotation(this.variant[variantId][columns.annotation]);
+                document.getElementById('position-gene').textContent =  `${gene},  ${location}`;
+                const p1ok = (protein1.length > 0) && (!protein1.includes('err'));
+                const p2ok = (protein2.length > 0) && (!protein2.includes('err'));
+                document.getElementById('position-protein').textContent = '';
+                if ( protein1.length > 0 || protein2.length > 0) {
+                        const [al1, al2] =    this.variant[variantId][columns.gt].split('|');
+                        let aaString = '';
+                        if (p1ok) { aaString += `${al1} => ${protein1}`; }
+                        if (p1ok && p2ok) { aaString += ',  '; }
+                        if (p2ok ) { aaString += `${al2} => ${protein2}`; }
+                        document.getElementById('position-protein').textContent =  aaString;
                 }
         }
 
-        private variantUpdate(variantId) {
-                // I AM HERE <-------
-                // loop over sources/provenance: proband, mother, father
-                for (let sourceIndex = 0; sourceIndex < this.variantProvenance.length; sourceIndex++) {
-                     const variantDetails = document.getElementById(this.variantProvenance[sourceIndex]);
-                     this.fillVariantDetails.bind(this)(variantDetails, variantId, sourceIndex);
-                }
+        private variantDetailUpdate(variantId) {
+                this.fillVariantDetailPosition(variantId);
+                this.fillVariantDetailTable.bind(this)(variantId);
         }
 
         private geneInfoUpdate(geneSymbol, uniprotId) {
@@ -218,11 +340,18 @@ export class DashboardComponent implements OnInit {
                                 document.getElementById('gene-summary').innerHTML = geneSummaryHtml;
 
                                 document.getElementById('gene-diseases-title').innerText = geneSymbol;
+                                const diseaseInfoElement = document.getElementById('gene-diseases');
                                 if (disease.length > 0) {
-                                    document.getElementById('gene-diseases').innerHTML = disease;
+                                   diseaseInfoElement.innerHTML = disease;
                                 } else {
-                                    document.getElementById('gene-diseases').innerHTML = '<p>No related diseases found.</p>';
+                                    diseaseInfoElement.innerHTML = '<p>No related diseases found.</p>';
                                 }
+                                if (geneSymbol in this.omim && this.omim[geneSymbol] !== 'x') {
+                                        const omimLink =
+                                                `<a href="https://www.omim.org/entry/${this.omim[geneSymbol]}" target="_blank">OMIM</a>`;
+                                        diseaseInfoElement.innerHTML += `<p>See also ${omimLink}.</p>`;
+                                }
+
                         })
                         .catch(err => {
                                 // this document now refers to our page
@@ -452,7 +581,10 @@ export class DashboardComponent implements OnInit {
                                 // const geneId = idResponse.split('\t')[1].split(':')[1];
                                 const pthwyIdList = [];
                                 for (const line of idResponse.trim().split('\n')) {
-                                     const pthwId = line.split('\t')[1].split(':')[1].trim();
+                                     if (!line.includes('\t')) {continue; }
+                                     const fields = line.split('\t');
+                                     if (!fields[1].includes(':')) {continue; }
+                                     const pthwId = fields[1].split(':')[1].trim();
                                      pthwyIdList.push(pthwId);
                                 }
                                 this.keggPathwayName = {};
@@ -462,6 +594,7 @@ export class DashboardComponent implements OnInit {
                                 // this document now refers to our page
                                 // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
                                 console.log('Failed to fetch keggPathwayId: ', err);
+                                console.log('the url was: ', url);
                                 return '';
                         });
                 return;

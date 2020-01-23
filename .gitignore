@@ -42,7 +42,9 @@ sys_tfm
 *.blastp
 *.txt
 communication.json
-
+*.tsv
+*.csv
+*.vcf
 
 # OS generated files #
 ######################

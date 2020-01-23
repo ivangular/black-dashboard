@@ -8,6 +8,8 @@ an academic user, ask them for a teacher/student license. I am a fan.
 
 ## deployment
 
+From the shell:
+
 ```
 ng build --prod
 ```
