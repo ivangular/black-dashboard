@@ -27,6 +27,7 @@ export class DashboardComponent implements OnInit {
                                 if (field[0] === 'filter') {
                                         this.updateFilter(field[1], field[2] === 'true');
                                         this.showVariantTable(); // this will show the re-filtered data
+                                        this.clearVariantInfo();
                                  }
                         }
                 });
@@ -177,9 +178,39 @@ export class DashboardComponent implements OnInit {
                         if ( varDisplay.length > 15) {varDisplay = varDisplay.substring(0, 15) + ' ...'; }
                         row.insertCell(3).innerHTML = varDisplay;
                         lengthFiltered += 1;
-                 }
+                }
                 document.getElementById('variant-count').innerText = `total: ${lengthFiltered}`;
-       }
+        }
+        private clearVariantInfo() {
+                // variant detail
+                document.getElementById('position').innerHTML = '';
+                document.getElementById('position-gene').textContent = '';
+                document.getElementById('position-protein').textContent = '';
+                // variant detail - table
+                document.getElementById('p-allele1').textContent = '';
+                document.getElementById('p-allele2').textContent = '';
+                document.getElementById('p-freq1').textContent = '';
+                document.getElementById('p-freq2').textContent = '';
+                document.getElementById('m-allele1').textContent = '';
+                document.getElementById('m-allele2').textContent = '';
+                document.getElementById('f-allele1').textContent = '';
+                document.getElementById('f-allele2').textContent = '';
+                // gene info
+                document.getElementById('gene-summary').innerHTML = '';
+                document.getElementById('gene-diseases').innerHTML = '';
+                document.getElementById('gene-summary-title').innerText = '';
+                document.getElementById('gene-diseases-title').innerText = '';
+                // interaction table
+                document.getElementById('gene-interaction-title').innerText = '';
+                document.getElementById('gene-interaction-subtitle').innerText = '';
+                // document.getElementById('interactant-table').innerHTML = '';
+                const table: HTMLTableElement = document.getElementById('interactant-table') as HTMLTableElement;
+                // this is supposed to be much faster than table.innerHTML = '';
+                // https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
+                while (table.firstChild) { table.removeChild(table.firstChild); }
+
+         }
+
 
         private updateFilter(filter: number, on: boolean) {
                 console.log(`updating filter ${filter} to ${on}`);
@@ -426,7 +457,7 @@ export class DashboardComponent implements OnInit {
                 // this.biogridHTMLtable = new HTMLTableElement();
                 this.biogridHTMLtable = document.createElement('table');
                 if (rawTable === null || query === null) {
-                        this.biogridHTMLtable.innerHtml = 'No interactants found.';
+                        this.biogridHTMLtable.innerHTML = 'No interactants found.';
                 } else {
                         const pubmed = {};
                         for (const line of rawTable.split('\n')) {
@@ -555,8 +586,8 @@ export class DashboardComponent implements OnInit {
                 this.keggHTMLtable = document.createElement('table');
                 if (keggPathwayIds === null ||  keggPathwayIds.length === 0 ||
                         this.keggPathwayName === null || this.keggPathwayName.length === 0) {
-                        this.keggHTMLtable.innerHtml = 'No pathways found.';
-
+                        this.keggHTMLtable.innerHTML = 'No pathways found.';
+                       
                 } else {
                         console.log('in kegg table' , keggPathwayIds.split(';'));
                         // link to formatted pathway info https://www.kegg.jp/dbget-bin/www_bget?pathway:hsa04144
@@ -573,7 +604,7 @@ export class DashboardComponent implements OnInit {
                                 row.insertCell().innerHTML = this.keggPathwayName[pthwId];
                         }
                         if (!pthwyFound) {
-                                this.keggHTMLtable.innerHtml = 'No pathways found.';
+                                this.keggHTMLtable.innerHTML = 'No pathways found.';
                         }
                 }
                 const classList: any = document.getElementById('interactant-table').classList;
