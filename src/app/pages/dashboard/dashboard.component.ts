@@ -1,9 +1,8 @@
 import {Component, OnInit} from '@angular/core';
-import { ActivatedRoute} from '@angular/router';
-import { HttpClient } from '@angular/common/http';
-import { Subscription } from 'rxjs';
-import { MessageService } from '../../_services';
-
+import {ActivatedRoute} from '@angular/router';
+import {HttpClient} from '@angular/common/http';
+import {Subscription} from 'rxjs';
+import {MessageService} from '../../_services';
 // json import
 // https://medium.com/@baerree/angular-7-import-json-14f8bba534af
 // not sure why I need to ignore the linter here, because the import seems to be working ok
@@ -44,10 +43,12 @@ export class DashboardComponent implements OnInit {
         private variantProvenance: any;
         private uniprot: any = null;
         private omim: any = null;
+        private kegg: any = null;
+        private keggPathwayIds: any = null;
+        private keggPathwayName: any = null;
         private biogridHTMLtable: any = null;
         private trrustHTMLtable: any = null;
         private keggHTMLtable: any = null;
-        private keggPathwayName: any = null;
         private annotExpansion =  {e: 'exonic', intr: 'intronic', s: 'splice',
                 d: 'downstream', u: 'upstream', r: 'RNA', f: '(ann. missing)'};
         private filterPositive: number;
@@ -63,15 +64,6 @@ export class DashboardComponent implements OnInit {
         // tslint:disable-next-line:no-bitwise
         private negativeFlags = this.COMMON | this.SILENT | this.PARENT_HOMOZYGOTE;
         // https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr1:47219779-47219787
-
-        private static ucscLink(chrom, pos) {
-                let url = 'https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr';
-                // + insures this is interpreted as a number, and not as a string
-                url += `${chrom}:${+pos - 4}-${+pos + 4}`;
-                let link = `<a href="${url}" target="_blank">`;
-                link += `GRCh38:chr${chrom}:${pos}</a>`;
-                return link;
-        }
 
         ngOnInit() {
                 console.log('sending message');
@@ -108,6 +100,7 @@ export class DashboardComponent implements OnInit {
                                 .get(`assets/case_vcfs/case${caseno}.tsv`, {responseType: 'text'})
                                 .subscribe(data => {
                                        this.loadVariantTable(data);
+                                       this.attachListenerToVariantTable();
                                        this.showVariantTable();
                                 });
                         this.http
@@ -115,12 +108,31 @@ export class DashboardComponent implements OnInit {
                                 .subscribe(data => {
                                         this.uniprot = {};
                                         this.omim = {};
+                                        this.kegg = {};
+                                        this.keggPathwayIds = {};
+                                        this.keggPathwayName = {};
                                         for (const line of data.split('\n')) {
                                              const field = line.split('\t');
                                              this.uniprot[field[0]] = field[1];
                                              this.omim[field[0]] = field[2];
+                                             if (field[3] !== 'x') {
+                                                     this.kegg[field[0]] = field[3]; // do I really need this?
+                                                     if (field[4] !== 'x') {
+                                                             this.keggPathwayIds[field[0]] = field[4];
+                                                     }
+                                             }
                                         }
                                 });
+                        this.http
+                                .get(`assets/kegg_pthwys.tsv`, {responseType: 'text'})
+                                .subscribe(data => {
+                                        this.keggPathwayName = {};
+                                        for (const line of data.split('\n')) {
+                                                const field = line.split('\t');
+                                                this.keggPathwayName[field[0]] = field[1];
+                                        }
+                                });
+
                 });
         }
 
@@ -129,10 +141,16 @@ export class DashboardComponent implements OnInit {
                 for (const line of data.split('\n')) {
                         const fields = line.split('\t');
                         if (fields.length < columns.length) {continue; }
+                        if (fields[0].charAt(0) === '#') {continue; }
                         this.variant.push(fields);
                 }
         }
-
+        private attachListenerToVariantTable() {
+                 // count on event propagation to get to table, whichever row was clicked
+                // (I do not want 1000 event listeners on the page)
+                const table: HTMLTableElement = document.getElementById('variant-table') as HTMLTableElement;
+                table.addEventListener('click',  this.onVariantClickHandler.bind(this), false);
+        }
         private showVariantTable() {
                 const table: HTMLTableElement = document.getElementById('variant-table') as HTMLTableElement;
                 // this is supposed to be much faster than table.innerHTML = '';
@@ -160,9 +178,6 @@ export class DashboardComponent implements OnInit {
                         row.insertCell(3).innerHTML = varDisplay;
                         lengthFiltered += 1;
                  }
-                // count on event propagation to get to table, whichever row was clicked
-                // (I do not want 1000 event listeners on the page)
-                table.addEventListener('click',  this.onVariantClickHandler.bind(this), false);
                 document.getElementById('variant-count').innerText = `total: ${lengthFiltered}`;
        }
 
@@ -230,9 +245,38 @@ export class DashboardComponent implements OnInit {
                 // this.myChartData.update();
         }
 
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        private ucscLink(chrom, pos) {
+                let url = 'https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr';
+                // + insures this is interpreted as a number, and not as a string
+                url += `${chrom}:${+pos - 4}-${+pos + 4}`;
+                let link = `<a href="${url}" target="_blank">`;
+                link += `GRCh38:chr${chrom}:${pos}</a>`;
+                return link;
+        }
+        private fillVariantDetailPosition( variantId) {
+                const chrom =  this.variant[variantId][columns.chrom];
+                // + insures this is interpreted as a number, and not as a string
+                const pos =  +this.variant[variantId][columns.pos];
+                document.getElementById('position').innerHTML = this.ucscLink(chrom, pos);
+
+                const  [location, strand, gene, protein1, protein2] = this.parseAnnotation(this.variant[variantId][columns.annotation]);
+                document.getElementById('position-gene').textContent =  `${gene},  ${location}`;
+                const p1ok = (protein1.length > 0) && (!protein1.includes('err'));
+                const p2ok = (protein2.length > 0) && (!protein2.includes('err'));
+                document.getElementById('position-protein').textContent = '';
+                if ( protein1.length > 0 || protein2.length > 0) {
+                        const [al1, al2] =    this.variant[variantId][columns.gt].split('|');
+                        let aaString = '';
+                        if (p1ok) { aaString += `${al1} => ${protein1}`; }
+                        if (p1ok && p2ok) { aaString += ',  '; }
+                        if (p2ok ) { aaString += `${al2} => ${protein2}`; }
+                        document.getElementById('position-protein').textContent =  aaString;
+                }
+        }
         private fillVariantDetailTable( variantId) {
                 const freqHumanReadable = {0: 'common', 1: '1:10', 2: '1:100', 3: '1:1K', 4: '1:10K',
-                                                5: '1:100K', 6: '1:1M', 7: '0', 8: '0', 9: '0'};
+                        5: '1:100K', 6: '1:1M', 7: '0', 8: '0', 9: '0'};
                 // this.variant[variantId] is
                 // chrom pos alleles freq annotation mom pop
                 let alleles =  this.variant[variantId][2].split('|');
@@ -250,42 +294,21 @@ export class DashboardComponent implements OnInit {
                 document.getElementById('f-allele1').textContent = alleles[0];
                 document.getElementById('f-allele2').textContent = alleles[1];
         }
-
-        private fillVariantDetailPosition( variantId) {
-                const chrom =  this.variant[variantId][columns.chrom];
-                // + insures this is interpreted as a number, and not as a string
-                const pos =  +this.variant[variantId][columns.pos];
-                document.getElementById('position').innerHTML = DashboardComponent.ucscLink(chrom, pos);
-
-                const  [location, strand, gene, protein1, protein2] = this.parseAnnotation(this.variant[variantId][columns.annotation]);
-                document.getElementById('position-gene').textContent =  `${gene},  ${location}`;
-                const p1ok = (protein1.length > 0) && (!protein1.includes('err'));
-                const p2ok = (protein2.length > 0) && (!protein2.includes('err'));
-                document.getElementById('position-protein').textContent = '';
-                if ( protein1.length > 0 || protein2.length > 0) {
-                        const [al1, al2] =    this.variant[variantId][columns.gt].split('|');
-                        let aaString = '';
-                        if (p1ok) { aaString += `${al1} => ${protein1}`; }
-                        if (p1ok && p2ok) { aaString += ',  '; }
-                        if (p2ok ) { aaString += `${al2} => ${protein2}`; }
-                        document.getElementById('position-protein').textContent =  aaString;
-                }
-        }
-
         private variantDetailUpdate(variantId) {
                 this.fillVariantDetailPosition(variantId);
                 this.fillVariantDetailTable.bind(this)(variantId);
         }
 
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
         private geneInfoUpdate(geneSymbol, uniprotId) {
                 document.getElementById('gene-summary').innerHTML = '';
                 document.getElementById('gene-diseases').innerHTML = '';
                 document.getElementById('gene-summary-title').innerText = 'geneSymbol';
                 document.getElementById('gene-diseases-title').innerText = 'geneSymbol';
                 if (uniprotId === 'unk') {
-                       document.getElementById('gene-summary').innerText = '(not available)';
-                       document.getElementById('gene-diseases').innerText = '(not available)';
-                       return;
+                        document.getElementById('gene-summary').innerText = '(not available)';
+                        document.getElementById('gene-diseases').innerText = '(not available)';
+                        return;
                 }
                 // CORS compliance problem
                 // note this: http://lindenb.github.io/pages/cors/index.html (bioinf services supporting CORS)
@@ -318,22 +341,22 @@ export class DashboardComponent implements OnInit {
                                         } else if (element.getAttribute('type') === 'disease') {
                                                 const child = element.children[0];
                                                 if (child.tagName === 'disease') {
-                                                    disease += '<p>';
-                                                    disease += `<b>${child.getElementsByTagName('name')[0].textContent}</b>`;
+                                                        disease += '<p>';
+                                                        disease += `<b>${child.getElementsByTagName('name')[0].textContent}</b>`;
                                                         // tslint:disable-next-line:max-line-length
-                                                    disease += `&nbsp;<b>(${child.getElementsByTagName('acronym')[0].textContent}).</b>&nbsp;`;
-                                                    disease += `${child.getElementsByTagName('description')[0].textContent}</p>`;
+                                                        disease += `&nbsp;<b>(${child.getElementsByTagName('acronym')[0].textContent}).</b>&nbsp;`;
+                                                        disease += `${child.getElementsByTagName('description')[0].textContent}</p>`;
                                                 } else {
-                                                    disease += `<p>${element.textContent}</p>`;
+                                                        disease += `<p>${element.textContent}</p>`;
                                                 }
-                                       }
+                                        }
                                 }
                                 let geneSummaryHtml = '';
                                 if (geneFunction.length > 0) {
-                                    geneSummaryHtml += '<h5 class="card-subtitle">FUNCTION</h5>' + geneFunction;
+                                        geneSummaryHtml += '<h5 class="card-subtitle">FUNCTION</h5>' + geneFunction;
                                 }
                                 if (geneExpression.length > 0) {
-                                    geneSummaryHtml += '<h5 class="card-subtitle">EXPRESSION</h5>' + geneExpression;
+                                        geneSummaryHtml += '<h5 class="card-subtitle">EXPRESSION</h5>' + geneExpression;
                                 }
                                 // this document now refers to our page
                                 document.getElementById('gene-summary-title').innerText = geneSymbol;
@@ -342,9 +365,9 @@ export class DashboardComponent implements OnInit {
                                 document.getElementById('gene-diseases-title').innerText = geneSymbol;
                                 const diseaseInfoElement = document.getElementById('gene-diseases');
                                 if (disease.length > 0) {
-                                   diseaseInfoElement.innerHTML = disease;
+                                        diseaseInfoElement.innerHTML = disease;
                                 } else {
-                                    diseaseInfoElement.innerHTML = '<p>No related diseases found.</p>';
+                                        diseaseInfoElement.innerHTML = '<p>No related diseases found.</p>';
                                 }
                                 if (geneSymbol in this.omim && this.omim[geneSymbol] !== 'x') {
                                         const omimLink =
@@ -358,12 +381,14 @@ export class DashboardComponent implements OnInit {
                                 document.getElementById('gene-summary').textContent = 'Problem fetching the page';
                                 console.log('Failed to fetch page: ', err);
                         });
-       }
+        }
 
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
         public setInteractionTable(tableSource) {
                 if (tableSource === 'biogrid') {
                         console.log('setting biogrid');
                         if (this.biogridHTMLtable === null) {return; }
+                        document.getElementById('gene-interaction-subtitle').innerText = 'interacts with';
                         const oldTable =  document.getElementById('interactant-table');
                         // note the order here replaceChild (newChild, oldChild);
                         oldTable.parentNode.replaceChild(this.biogridHTMLtable, oldTable);
@@ -375,6 +400,7 @@ export class DashboardComponent implements OnInit {
                         oldTable.parentNode.replaceChild(this.trrustHTMLtable, oldTable);
                 } else if (tableSource === 'kegg') {
                         console.log('setting kegg');
+                        document.getElementById('gene-interaction-subtitle').innerText = 'participates in pathway(s)';
                         if (this.keggHTMLtable === null) {return; }
                         const oldTable =  document.getElementById('interactant-table');
                         // note the order here replaceChild (newChild, oldChild);
@@ -382,7 +408,7 @@ export class DashboardComponent implements OnInit {
                 }
         }
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////
         // https://webservice.thebiogrid.org/interactions/?searchNames=true&geneList=MDM2&includeInteractors=true&taxId=9606
         // &max=10&accesskey=xxxxx
         private constructHtmlLinks(pubmedIds) {
@@ -395,32 +421,42 @@ export class DashboardComponent implements OnInit {
                 }
                 return pubmedHtml;
         }
-        private processBiogridTable(rawTable, query) {
+        private createBiogridHTMLTable(rawTable, query) {
                 // this does not work,  the object is missing some stuff that  document.createElement takes care of
                 // this.biogridHTMLtable = new HTMLTableElement();
                 this.biogridHTMLtable = document.createElement('table');
-                const pubmed = {};
-                for (const line of rawTable.split('\n')) {
-                        const field = line.split('\t');
-                        // entrezA:1 entrezB:2 officialA:7  officialB:8  expSysType:12 (physical or genetic) pubMedID:14
-                        if (field[12] !== 'physical') { continue; }
-                        let interactant = field[7];
-                        if (interactant === query) {
-                                interactant = field[8];
+                if (rawTable === null || query === null) {
+                        this.biogridHTMLtable.innerHtml = 'No interactants found.';
+                } else {
+                        const pubmed = {};
+                        for (const line of rawTable.split('\n')) {
+                                const field = line.split('\t');
+                                // entrezA:1 entrezB:2 officialA:7  officialB:8  expSysType:12 (physical or genetic) pubMedID:14
+                                if (field[12] !== 'physical') {
+                                        continue;
+                                }
+                                let interactant = field[7];
+                                if (interactant === query) {
+                                        interactant = field[8];
+                                }
+                                if (!pubmed.hasOwnProperty(interactant)) {
+                                        pubmed[interactant] = new Set();
+                                }
+                                pubmed[interactant].add(field[14]);
                         }
-                        if (!pubmed.hasOwnProperty(interactant)) {pubmed[interactant] = new Set(); }
-                        pubmed[interactant].add(field[14]);
-                }
-                // ? Requires a (for ... in) statement to be filtered with an if statement.
-                // if (someObject.hasOwnProperty(key)) (to protect from iterating over
-                // keys inherited from the prototype
-                for (const geneName in pubmed) {
-                        if (!pubmed.hasOwnProperty(geneName) || pubmed[geneName].size < 2 ) {continue; }
-                        const row: HTMLTableRowElement = this.biogridHTMLtable.insertRow();
-                        // row.insertCell(0).innerHTML = this.formatRadioButton(i);
-                        // TODO - gene link to entrez, pubmedId to pubmed, OMIM link
-                        row.insertCell().innerHTML = geneName;
-                        row.insertCell().innerHTML = this.constructHtmlLinks(pubmed[geneName].values());
+                        // ? Requires a (for ... in) statement to be filtered with an if statement.
+                        // if (someObject.hasOwnProperty(key)) (to protect from iterating over
+                        // keys inherited from the prototype
+                        for (const geneName in pubmed) {
+                                if (!pubmed.hasOwnProperty(geneName) || pubmed[geneName].length < 2) {
+                                        continue;
+                                }
+                                const row: HTMLTableRowElement = this.biogridHTMLtable.insertRow();
+                                let  qryString = `https://www.uniprot.org/uniprot/?query=gene:${geneName}`;
+                                qryString += '+organism:human+reviewed:yes&sort=score';
+                                row.insertCell().innerHTML = `<a href="${qryString}" target="_blank">${geneName}</a>`;
+                                row.insertCell().innerHTML = this.constructHtmlLinks(pubmed[geneName].values());
+                        }
                 }
                 const classList: any = document.getElementById('interactant-table').classList;
                 for (const elClass of classList) {
@@ -449,19 +485,19 @@ export class DashboardComponent implements OnInit {
                                 return response.text();
                         })
                         .then(rawTable => {
-                                this.processBiogridTable(rawTable, geneName);
-                                const oldTable =  document.getElementById('interactant-table');
-                               // note the order here replaceChild (newChild, oldChild);
-                                oldTable.parentNode.replaceChild(this.biogridHTMLtable, oldTable);
+                                this.createBiogridHTMLTable(rawTable, geneName);
+                                this.setInteractionTable('biogrid');
                         })
                         .catch(err => {
                                 // this document now refers to our page
                                 // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
                                 console.log('Failed to fetch biogrid page: ', err);
-                        });
+                                this.createBiogridHTMLTable(null, null);
+                                this.setInteractionTable('biogrid');
+                       });
         }
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////////////////////////////////////////
         private processTrrustTable(rawTable) {
                 this.trrustHTMLtable = document.createElement('table');
                 for (const line of rawTable.split('\n')) {
@@ -513,133 +549,63 @@ export class DashboardComponent implements OnInit {
                         });
         }
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////
-        private processKeggTable() {
+        //////////////////////////////////////////////////////////////
+        private createKeggHTMLTable(keggPathwayIds: string) {
+                console.log('in kegg table' , keggPathwayIds);
                 this.keggHTMLtable = document.createElement('table');
-                if (this.keggPathwayName === null || this.keggPathwayName.length === 0) {return; }
-                // link to formatted pathway info https://www.kegg.jp/dbget-bin/www_bget?pathway:hsa04144
-                // TODO make links, target blank
-                for (const pthwId in this.keggPathwayName) {
-                        if (!this.keggPathwayName.hasOwnProperty(pthwId)) {continue; }
-                        console.log(pthwId, this.keggPathwayName[pthwId]);
-                        const row: HTMLTableRowElement = this.keggHTMLtable.insertRow();
-                        // tslint:disable-next-line:max-line-length
-                        row.insertCell().innerHTML = `<a href="https://www.genome.jp/dbget-bin/www_bget?${pthwId}" target="_blank">KEGG</a>`;
-                        row.insertCell().innerHTML = this.keggPathwayName[pthwId];
+                if (keggPathwayIds === null ||  keggPathwayIds.length === 0 ||
+                        this.keggPathwayName === null || this.keggPathwayName.length === 0) {
+                        this.keggHTMLtable.innerHtml = 'No pathways found.';
+
+                } else {
+                        console.log('in kegg table' , keggPathwayIds.split(';'));
+                        // link to formatted pathway info https://www.kegg.jp/dbget-bin/www_bget?pathway:hsa04144
+                        let pthwyFound = false;
+                        for (const pthwId of keggPathwayIds.split(';')) {
+                                console.log(pthwId);
+                                if (!this.keggPathwayName.hasOwnProperty(pthwId)) {continue; }
+                                pthwyFound = true;
+                                console.log(pthwId, this.keggPathwayName[pthwId]);
+                                const row: HTMLTableRowElement = this.keggHTMLtable.insertRow();
+                                // tslint:disable-next-line:max-line-length
+                                const anchor = `<a href="https://www.genome.jp/dbget-bin/www_bget?pathway:hsa${pthwId}" target="_blank">KEGG</a>`;
+                                row.insertCell().innerHTML = anchor;
+                                row.insertCell().innerHTML = this.keggPathwayName[pthwId];
+                        }
+                        if (!pthwyFound) {
+                                this.keggHTMLtable.innerHtml = 'No pathways found.';
+                        }
                 }
                 const classList: any = document.getElementById('interactant-table').classList;
                 for (const elClass of classList) {
                         this.keggHTMLtable.classList.add(elClass);
                 }
                 this.keggHTMLtable.id = 'interactant-table';
-        }
-        // https://cors-anywhere.herokuapp.com/https://www.ebi.ac.uk/intact/interactors/id:P02763*
-        private keggPathwayInfo(keggPthwyIdList) {
-                // download pathway info as a flatfile
-                // http://rest.kegg.jp/get/pathway:hsa04144
-                if (keggPthwyIdList.length === 0) {
-                        this.processKeggTable();
-                } else {
-                        const keggPthwyId =  keggPthwyIdList.pop();
-                        const url = `https://cors-anywhere.herokuapp.com/http://rest.kegg.jp/get/pathway:${keggPthwyId}`;
-                        fetch(url, {mode: 'cors'})
-                                .then(response => {
-                                        // When the page is loaded convert it to text
-                                        return response.text();
-                                })
-                                .then(idResponse => {
-                                        // find the name of the pathway
-                                        for (const line of idResponse.split('\n')) {
-                                                if (line.substr(0, 4) === 'NAME') {
-                                                       this.keggPathwayName[keggPthwyId]  =  line
-                                                                        .split('-')[0]
-                                                                        .replace('NAME', '').trim();
-                                                       break;
-                                                }
-                                        }
-                                        this.keggPathwayInfo(keggPthwyIdList);
-                                })
-                                .catch(err => {
-                                        // this document now refers to our page
-                                        // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
-                                        console.log('Failed to fetch keggPathwayId: ', err);
-                                        return '';
-                                });
+         }
+        private keggUpdate(geneName) {
 
+                if (this.keggPathwayIds.hasOwnProperty(geneName)) {
+                        this.createKeggHTMLTable(this.keggPathwayIds[geneName]);
+                } else {
+                        this.createKeggHTMLTable(null);
                 }
+                this.setInteractionTable('kegg');
         }
-        private keggPathwaysFromKeggGene(keggGeneId) {
-                // get pathways related to gene id:  http://rest.kegg.jp/link/pathway/hsa:10993
-                const  url = `https://cors-anywhere.herokuapp.com/http://rest.kegg.jp/link/pathway/hsa:${keggGeneId}`;
-                fetch(url, {mode: 'cors'})
-                        .then(response => {
-                                // When the page is loaded convert it to text
-                                return response.text();
-                        })
-                        .then(idResponse => {
-                                // the format is somehting like    up:P02763	hsa:5004
-                                // const geneId = idResponse.split('\t')[1].split(':')[1];
-                                const pthwyIdList = [];
-                                for (const line of idResponse.trim().split('\n')) {
-                                     if (!line.includes('\t')) {continue; }
-                                     const fields = line.split('\t');
-                                     if (!fields[1].includes(':')) {continue; }
-                                     const pthwId = fields[1].split(':')[1].trim();
-                                     pthwyIdList.push(pthwId);
-                                }
-                                this.keggPathwayName = {};
-                                this.keggPathwayInfo(pthwyIdList);
-                        })
-                        .catch(err => {
-                                // this document now refers to our page
-                                // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
-                                console.log('Failed to fetch keggPathwayId: ', err);
-                                console.log('the url was: ', url);
-                                return '';
-                        });
-                return;
-        }
-        private keggIdFromUniprot(uniprotId) {
-                // get KEGG id: http://rest.kegg.jp/conv/genes/uniprot:P02763
-                // get pathways related to gene id:  http://rest.kegg.jp/link/pathway/hsa:10993
-                // get all genes related to pathway id: http://rest.kegg.jp/link/hsa/pathway:hsa01200
-                // link to  gene info https://www.kegg.jp/dbget-bin/www_bget?hsa:10993
-                const  url = `https://cors-anywhere.herokuapp.com/http://rest.kegg.jp/conv/genes/uniprot:${uniprotId}`;
-                fetch(url, {mode: 'cors'})
-                        .then(response => {
-                                // When the page is loaded convert it to text
-                                return response.text();
-                        })
-                        .then(idResponse => {
-                                // the format is somehting like    up:P02763	hsa:5004
-                                const geneId = idResponse.split('\t')[1].split(':')[1].trim();
-                                this.keggPathwaysFromKeggGene(geneId);
-                        })
-                        .catch(err => {
-                                // this document now refers to our page
-                                // document.getElementById('gene-summary').textContent = 'Problem fetching the page';
-                                return '';
-                        });
-                return;
-        }
-        private keggUpdate(uniprotId) {
-              this.keggIdFromUniprot(uniprotId);
-        }
+
+        //////////////////////////////////////////////////////////////
         private interactionUpdate(geneSymbol, uniprotId) {
                 document.getElementById('gene-interaction-title').innerText = geneSymbol;
-                // TODO: clean handling in no-response case for all of the below
+
                 this.biogridHTMLtable = null;
                 this.trrustHTMLtable = null;
                 this.keggHTMLtable = null;
-                this.keggPathwayName = null;
 
                 // BioGrid - protein-protein interactions
                 this.biogridUpdate(geneSymbol); // sets the table when done
                 // TRRUST - transcription factors and their targets
                 // this.trrustUpdate(geneSymbol, '');
                 // KEGG - pathways
-                if (uniprotId !== 'unk') {
-                        this.keggUpdate(uniprotId);
-                }
-        }
+                console.log(geneSymbol, ' setting kegg links');
+                this.keggUpdate(geneSymbol);
+       }
   }
