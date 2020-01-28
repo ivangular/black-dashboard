@@ -6,46 +6,59 @@ declare interface RouteInfo {
   path: string;
   title: string;
   filter: number;
+  selection: string;
   class: string;
 }
 // TODO I am declaring filters both here andin dashboard component.ts
 export const ROUTES: RouteInfo[] = [
         {
                 path: '/dashboard',
-                title: 'Remove common (in general population)',
+                title: 'Remove common',
                 filter: 2, // COMMON
-                class: 'filter'
+                class: 'filter',
+                selection: 'negative'
         },
         {
                 path: '/dashboard',
-                title: 'Remove silent ',
+                title: 'Remove silent',
                 filter: 8, // SILENT
-                class: 'filter'
-        },
+                class: 'filter',
+                selection: 'negative'
+       },
         {
                 path: '/dashboard',
-                title: 'Remove parent\nhomozygote ',
+                title: 'Remove parent\nhomozygote',
                 filter: 32, // PARENT HOMOZYGOTE
-                class: 'filter'
+                class: 'filter',
+                selection: 'negative'
         },
-
-        {
+         {
                 path: '/dashboard',
-                title: 'Exonic only ',
-                filter:  4, // EXONIC
-                class: 'filter'
-        },
-        {
-                path: '/dashboard',
-                title: 'Homozygote only ',
-                filter: 1, // HOMOZYGOTE
-                class: 'filter'
-        },
-        {
-                path: '/dashboard',
-                title: 'De novo only ',
+                title: 'Remove de novo',
                 filter: 16, // DE_NOVO
-                class: 'filter'
+                class: 'filter',
+                selection: 'negative'
+        },
+       {
+                path: '/dashboard',
+                title: 'Exonic only',
+                filter:  4, // EXONIC
+                class: 'filter',
+                selection: 'positive'
+        },
+        {
+                path: '/dashboard',
+                title: 'Homozygote only',
+                filter: 1, // HOMOZYGOTE
+                class: 'filter',
+                selection: 'positive'
+        },
+        {
+                path: '/dashboard',
+                title: 'De novo only',
+                filter: 16, // DE_NOVO
+                class: 'filter',
+                selection: 'positive'
         },
 
 ];
@@ -59,10 +72,9 @@ export class SidebarComponent implements OnInit {
 
         subscription: Subscription;
         menuItems: any[];
-        filterOn: any;
+        selection: any;
 
         constructor(private messageService: MessageService) {
-
                 // subscribe to home component messages
                 this.subscription = this.messageService.getMessage().subscribe(message => {
                         if (message) {
@@ -80,32 +92,28 @@ export class SidebarComponent implements OnInit {
                 });
         }
 
-        sendMessage(filter: number): void {
+        sendMessage(filter: number, selection: string): void {
                 // send message to subscribers via observable subject
-                this.messageService.sendMessage(`filter ${filter} ${this.filterOn[filter]}`);
+                this.messageService.sendMessage(`filter ${filter} ${this.selection[filter]}`);
         }
-
-        clearMessages(): void {
-                // clear messages
-                this.messageService.clearMessages();
-        }
-
 
         ngOnInit() {
                 this.menuItems = ROUTES;
                 this.resetFilters();
         }
         private resetFilters() {
-                this.filterOn = {};
+                this.selection = {};
                 for (const menuItem of this.menuItems) {
-                        this.filterOn[menuItem.filter] = false;
-                }
-         }
-
-        toggleFilter(filter) {
-                if (filter in this.filterOn) {
-                        this.filterOn[filter] = ! this.filterOn[filter];
+                        this.selection[menuItem.filter] = 'none';
                 }
         }
 
- }
+        toggleFilter(filter, selection) {
+                if ( this.selection[filter] === selection ) {
+                        this.selection[filter]   = 'none';
+                } else {
+                        this.selection[filter]   = selection;
+                }
+        }
+
+}

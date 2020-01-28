@@ -11,20 +11,19 @@
    // border is making the contents visibly shift, while the outline does not
    // still I want it ont hte inside, thus the outline with negative offset
   .filter{
-      font-size: 1rem;
+      font-size: 1em;
       font-weight: bold;
-      margin-left:15px;
-      margin-right:15px;
-      margin-top:30px;
-      margin-bottom:20px;
+      margin-left:20px;
+      margin-right:17px;
+      margin-top:15px;
+      margin-bottom:15px;
       padding: 5px;
 
       :hover {
-        outline-width: 2px;
+        outline-width: 5px;
         outline-style: solid;
         outline-color: pink;
-        outline-offset: 12px;
-
+        outline-offset: 5px;
       }
   }
 
@@ -32,7 +31,7 @@
       outline-width: 5px;
       outline-style: solid;
       outline-color:  darkred;
-      outline-offset: 12px;
+      outline-offset: 7px;
   }
 
  .filter-title {

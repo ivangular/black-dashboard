@@ -6,10 +6,12 @@
 
 <div class="sidebar-wrapper" id="filter-list">
     <div  class="filter-title"> FILTERS </div>
-    <div *ngFor="let menuItem of menuItems" class="{{ menuItem.class }} ">
+    <div *ngFor="let menuItem of menuItems">
 
-      <label (click)="toggleFilter(menuItem.filter);sendMessage(menuItem.filter)" [ngClass]="{'filter-clicked':filterOn[menuItem.filter]}">
-      <!--label (click)="toggleFilter(menuItem.filter);sendMessage(menuItem.filter)" [ngClass]="{'filter-clicked':true} "-->
+      <label class="{{ menuItem.class }}"
+             (click)="toggleFilter(menuItem.filter, menuItem.selection);sendMessage(menuItem.filter, menuItem.selection)"
+             [ngClass]="{'filter-clicked':selection[menuItem.filter]=== menuItem.selection}">
+            <!--label (click)="toggleFilter(menuItem.filter);sendMessage(menuItem.filter)" [ngClass]="{'filter-clicked':true} "-->
             <p>{{ menuItem.title }}</p>
       </label>
 

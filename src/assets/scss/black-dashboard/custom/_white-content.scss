@@ -246,6 +246,13 @@
     }
   }
 
+   tr.tr-clickable:hover{
+     background-color: whitesmoke;
+  }
+ .tr-clicked {
+     background-color: whitesmoke;
+  }
+
   .footer ul li a{
     color: $black-states;
   }

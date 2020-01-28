@@ -25,7 +25,7 @@ export class DashboardComponent implements OnInit {
                         if (message) {
                                 const field = message.text.split(' ');
                                 if (field[0] === 'filter') {
-                                        this.updateFilter(field[1], field[2] === 'true');
+                                        this.updateFilter(field[1],  field[2]);
                                         this.showVariantTable(); // this will show the re-filtered data
                                         this.clearVariantInfo();
                                  }
@@ -54,17 +54,12 @@ export class DashboardComponent implements OnInit {
                 d: 'downstream', u: 'upstream', r: 'RNA', f: '(ann. missing)'};
         private filterPositive: number;
         private filterNegative: number;
-        private HOMOZYGOTE   =  1;
-        private COMMON       =  2;
-        private EXONIC       =  4;
-        private SILENT       =  8;
-        private DE_NOVO      = 16;
-        private PARENT_HOMOZYGOTE = 32;
-        // tslint:disable-next-line:no-bitwise
-        private positiveFlags = this.EXONIC |  this.HOMOZYGOTE | this.DE_NOVO;
-        // tslint:disable-next-line:no-bitwise
-        private negativeFlags = this.COMMON | this.SILENT | this.PARENT_HOMOZYGOTE;
-        // https://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38&position=chr1:47219779-47219787
+        // private HOMOZYGOTE   =  1;
+        // private COMMON       =  2;
+        // private EXONIC       =  4;
+        // private SILENT       =  8;
+        // private DE_NOVO      = 16;
+        // private PARENT_HOMOZYGOTE = 32;
 
         ngOnInit() {
                 console.log('sending message');
@@ -91,6 +86,11 @@ export class DashboardComponent implements OnInit {
                                         this.contentsEn = data;
                                         this.contents = this.contentsEn;
                                         this.descriptionUpdate();
+                                });
+                        this.http
+                                .get(`assets/case_titles/case${caseno}.title.txt`, {responseType: 'text'})
+                                .subscribe(data => {
+                                         this.titleUpdate(data);
                                 });
                         this.http
                                 .get(`assets/case_descriptions/case${caseno}.hr.txt`, {responseType: 'text'})
@@ -157,7 +157,6 @@ export class DashboardComponent implements OnInit {
                 // this is supposed to be much faster than table.innerHTML = '';
                 // https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
                 while (table.firstChild) { table.removeChild(table.firstChild); }
-                console.log(' >>>> ', this.variant.length);
                 let lengthFiltered = 0;
                 for (let i = 0; i < this.variant.length; i++) {
                         // show only variants that g o through the filter
@@ -212,15 +211,24 @@ export class DashboardComponent implements OnInit {
          }
 
 
-        private updateFilter(filter: number, on: boolean) {
-                console.log(`updating filter ${filter} to ${on}`);
+        private updateFilter(filter: number, selection: string) {
+                console.log(`updating filter ${filter} to ${selection}`);
                 // tslint:disable-next-line:no-bitwise
-                if (filter & this.positiveFlags)  {
+                if (selection === 'positive')  {
                         // tslint:disable-next-line:no-bitwise
-                        this.filterPositive ^= filter;
-                } else {
+                        this.filterPositive  |= filter;
                         // tslint:disable-next-line:no-bitwise
-                        this.filterNegative ^= filter;
+                        this.filterNegative  &= ~filter;
+                } else if (selection === 'negative')  {
+                        // tslint:disable-next-line:no-bitwise
+                        this.filterNegative |= filter;
+                         // tslint:disable-next-line:no-bitwise
+                        this.filterPositive  &=  ~filter;
+               } else {
+                        // tslint:disable-next-line:no-bitwise
+                        this.filterPositive  &=  ~filter;
+                        // tslint:disable-next-line:no-bitwise
+                        this.filterNegative  &= ~filter;
                 }
         }
 
@@ -270,6 +278,9 @@ export class DashboardComponent implements OnInit {
                 return [location, strand, gene, protein1, protein2];
         }
 
+        public titleUpdate(title: string) {
+                document.getElementById('case-title').textContent = title;
+        }
         public descriptionUpdate() {
                 document.getElementById('case-description').textContent = this.contents;
                 // this.myChartData.data.datasets[0].data = this.data;
@@ -587,7 +598,7 @@ export class DashboardComponent implements OnInit {
                 if (keggPathwayIds === null ||  keggPathwayIds.length === 0 ||
                         this.keggPathwayName === null || this.keggPathwayName.length === 0) {
                         this.keggHTMLtable.innerHTML = 'No pathways found.';
-                       
+
                 } else {
                         console.log('in kegg table' , keggPathwayIds.split(';'));
                         // link to formatted pathway info https://www.kegg.jp/dbget-bin/www_bget?pathway:hsa04144
