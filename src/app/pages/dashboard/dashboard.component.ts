@@ -309,11 +309,11 @@ export class DashboardComponent implements OnInit {
                 document.getElementById('position-protein').textContent = '';
                 if ( protein1.length > 0 || protein2.length > 0) {
                         const [al1, al2] =    this.variant[variantId][columns.gt].split('|');
-                        let aaString = '';
+                        let aaString = '<span class=" headerstyle">protein-level impact:</span> ';
                         if (p1ok) { aaString += `${al1} => ${protein1}`; }
                         if (p1ok && p2ok) { aaString += ',  '; }
                         if (p2ok ) { aaString += `${al2} => ${protein2}`; }
-                        document.getElementById('position-protein').textContent =  aaString;
+                        document.getElementById('position-protein').innerHTML =  aaString;
                 }
         }
         private fillVariantDetailTable( variantId) {
@@ -507,6 +507,7 @@ export class DashboardComponent implements OnInit {
                 this.biogridHTMLtable.id = 'interactant-table';
         }
         private biogridUpdate(geneName) {
+                // TODO link to OMIM for the interactant
                 //  throughputTag If set to 'low or 'high', only interactions with 'Low throughput'
                 //  or 'High throughput' in the 'throughput' field will be returned. Interactions with both 'Low throughput'
                 //  and 'High throughput' will be returned by either value.
@@ -593,7 +594,7 @@ export class DashboardComponent implements OnInit {
 
         //////////////////////////////////////////////////////////////
         private createKeggHTMLTable(keggPathwayIds: string) {
-                console.log('in kegg table' , keggPathwayIds);
+                console.log('in kegg table', keggPathwayIds);
                 this.keggHTMLtable = document.createElement('table');
                 if (keggPathwayIds === null ||  keggPathwayIds.length === 0 ||
                         this.keggPathwayName === null || this.keggPathwayName.length === 0) {
