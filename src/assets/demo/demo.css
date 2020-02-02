@@ -12,13 +12,6 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-.tim-row {
-  margin-bottom: 20px;
-}
-
-.tim-white-buttons {
-  background-color: #777777;
-}
 
 .typography-line {
   padding-left: 25%;
@@ -69,9 +62,4 @@
     width: 100%;
     bottom: 10px;
   }
-}
-
-.card.card-upgrade .card-category {
-  max-width: 530px;
-  margin: 0 auto;
 }

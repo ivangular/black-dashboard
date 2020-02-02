@@ -6,6 +6,16 @@ This work is based on a template distributed by
 Hugely helpful was [WebStorm](https://www.jetbrains.com/webstorm/) IDE. If you are
 an academic user, ask them for a teacher/student license. I am a fan.
 
+## the key files
+
+[case description](/src/app/pages/cases)
+
+[dashboard proper](/src/app/pages/cases)
+
+[sidebar](/src/app/components/sidebar)
+
+[styling](/src/assets/scss/black-dashboard)
+
 ## deployment
 
 From the shell:

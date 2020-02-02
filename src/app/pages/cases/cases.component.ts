@@ -10,10 +10,6 @@ export class CasesComponent implements OnInit {
   constructor(private messageService: MessageService) {}
 
   ngOnInit() {
-     console.log('sending message');
      this.messageService.sendMessage('flist hide');
-
   }
-
-
 }
