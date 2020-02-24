@@ -61,5 +61,14 @@ I am always amazed that these things ever work.
 ##################
 # Deplying to GitHub pages
 
-Make sure that you have a login-free push set up. [Change Git Remote URL](https://linuxize.com/post/how-to-change-git-remote-url/)
- from https to ssh. 
+Make sure that you have a login-free push set up.:
+* [Change Git Remote URL](https://linuxize.com/post/how-to-change-git-remote-url/)
+ from https to ssh.  
+* copy your ~/.ssh/id_rsa.pub to the repo  ("settings", the next-to-last option under your avatar in the 
+upper right corner, then SSH and GPG keys; if you already have another repo you will need a different key for
+this one; use ssh-keygen -t rsa -C "email@email.host" and then store to a file with the name id_rsa_newname; 
+two files should be generated: id_rsa_newname and id_rsa_newname.pub)
+
+
+Settings GitHub Pages  Source MasterBranch must be set to None 
+- this deployss your README page (i.e. this) as a page.
