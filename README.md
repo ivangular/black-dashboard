@@ -57,3 +57,9 @@ systemctl reload apache2
 
 
 I am always amazed that these things ever work.
+
+##################
+# Deplying to GitHub pages
+
+Make sure that you have a login-free push set up. [Change Git Remote URL](https://linuxize.com/post/how-to-change-git-remote-url/)
+ from https to ssh. 
